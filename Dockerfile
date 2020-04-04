@@ -20,12 +20,13 @@ RUN pip install --upgrade pip
 # install selenium
 RUN pip install selenium
 
-RUN pip install pandas numpy boto3 boto joblib requests ipdb
+RUN pip install pandas numpy boto3 boto joblib requests ipdb awscli watchtower
 
 # Begin Jeff work
 ADD david_scrapers /opt/
 ADD jailscrape /opt/jailscrape
 ADD conf.env /opt/jailscrape/
+ADD credentials /root/.aws/credentials
 
 ADD docker-entrypoint.sh /opt/
 
