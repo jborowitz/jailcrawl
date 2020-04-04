@@ -49,7 +49,7 @@ def main(urlAddress):
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--no-sandbox")
-        browser = webdriver.Chrome(chrome_options=chrome_options)
+        browser = webdriver.Chrome(options=chrome_options)
         #browser = start_driver(root_directory) #Defaults to chrome driver looking for tor proxy
         #Given the urlAddress passed to the function we will navigate to the page
         browser.get(urlAddress) 
@@ -93,9 +93,13 @@ def main(urlAddress):
     
             #Increment page number    
             page_index += 1
+
+            date_collected = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            filename = state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.html'.format(page_index)
+            print(filename)
+            s3.Object('jailcrawl',filename).put(Body=store_source)
     	    
         #Mark the time the file is collected
-        date_collected = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         #Create an html file with the name of the time stamp collected and write the page to a folder 
         #Within the root directory. Replace county and city with the county and city you are working on.
         #file_ = open(root_directory + '/County/City/' + date_collected + '.html', 'w', encoding='utf-8')
@@ -105,19 +109,18 @@ def main(urlAddress):
         #s3.Object('jailcrawl',state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '.html').put(Body=store_source)
         
         #Toggle Local/S3 Storage
-        aws = True
+        # aws = True
         
-        for entry in pages:
+        # for entry in pages:
         
-            if aws == True:
-                s3.Object('jailcrawl',state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.html'.format(str(pages.index(entry)+1))).put(Body=entry)
-            else:
-                if not os.path.exists('./Scrapings/{}/{}/'.format(state, county)):
-                    os.makedirs('./Scrapings/{}/{}/'.format(state, county))
-                
-                file_ = open(root_directory + '/Scrapings/{}/{}/'.format(state, county) + date_collected + '_page_{}.html'.format(str(pages.index(entry)+1)), 'w', encoding='utf-8')
-                file_.write(str(entry))
-                file_.close() #close the writing of the file
+        #     if aws == True:
+        #     else:
+        #         if not os.path.exists('./Scrapings/{}/{}/'.format(state, county)):
+        #             os.makedirs('./Scrapings/{}/{}/'.format(state, county))
+        #         
+        #         file_ = open(root_directory + '/Scrapings/{}/{}/'.format(state, county) + date_collected + '_page_{}.html'.format(str(pages.index(entry)+1)), 'w', encoding='utf-8')
+        #         file_.write(str(entry))
+        #         file_.close() #close the writing of the file
         
         #Close the browser
         browser.close()
@@ -141,7 +144,6 @@ if __name__ == "__main__":
     #Select the index of the roster this script is for:
     #Write the name of the county and state
     global roster, locations
-    import ipdb; ipdb.set_trace()
     roster = pd.read_csv('/opt/jail_roster_final_rmDuplicates.csv',encoding = "utf-8")
     locations = []
     for row in range(roster.shape[0] - 1):
