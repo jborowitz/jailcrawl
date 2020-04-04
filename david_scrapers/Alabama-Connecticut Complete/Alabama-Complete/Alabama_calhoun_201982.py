@@ -1,9 +1,5 @@
 from urllib.request import urlopen, Request
 import pandas as pd
-import selenium as sm
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
-from selenium import webdriver
 import os
 import time
 import numpy as np
@@ -12,19 +8,8 @@ import datetime as dt
 import sys
 from io import StringIO
 from joblib import Parallel, delayed
-import boto3
-import boto.s3
 import requests
-
-KEY_ID = 'AKIAIIJA7TBYB2EAMHQA'
-ACCESS_KEY = 'ZlZqfd4nzTp1ystm99X/XZpbVCe0kE1fAKSUasfk'
-
-s3 = boto3.resource(
-    's3',
-    region_name='us-east-1',
-    aws_access_key_id=KEY_ID,
-    aws_secret_access_key=ACCESS_KEY
-)
+from jailscrape.common import save_to_s3, get_browser
 
 
 #INSERT PATH TO THE FILE WHERE YOU WILL BE STORING YOUR FILES BELOW (allPrisonersProject)
@@ -35,7 +20,7 @@ root_directory = '.'
 os.chdir(root_directory)
 #from essentials import *
 
-def main(urlAddress):
+def main(roster_row):
     try:
         """
         OLD URL: http://www.calcoso.org/divisions-jail-inmate-roster/
@@ -43,13 +28,10 @@ def main(urlAddress):
         
         """
         
-        #urlAddress = roster['Working Link'].values[index]
+        browser = get_browser()
+
+        urlAddress = roster_row['Working Link']
         #This will use the root directory defined at the top of the script to identify where the chromdriver for selium is located
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--no-sandbox")
-        browser = webdriver.Chrome(options=chrome_options)
         #browser = start_driver(root_directory) #Defaults to chrome driver looking for tor proxy
         #Given the urlAddress passed to the function we will navigate to the page
         browser.get(urlAddress) 
@@ -93,11 +75,8 @@ def main(urlAddress):
     
             #Increment page number    
             page_index += 1
+            save_to_s3(browser.page_source, page_index, roster_row)
 
-            date_collected = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            filename = state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.html'.format(page_index)
-            print(filename)
-            s3.Object('jailcrawl',filename).put(Body=store_source)
     	    
         #Mark the time the file is collected
         #Create an html file with the name of the time stamp collected and write the page to a folder 
@@ -156,4 +135,6 @@ if __name__ == "__main__":
     locationInUse = locations[index]
     state = roster.State[index]
     county = roster.County[index]
-    main(roster['Working Link'].values[index])
+    roster_row = roster.iloc[index]
+    main(roster_row)
+    #main(roster['Working Link'].values[index])

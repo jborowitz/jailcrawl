@@ -24,6 +24,8 @@ RUN pip install pandas numpy boto3 boto joblib requests ipdb
 
 # Begin Jeff work
 ADD david_scrapers /opt/
+ADD jailscrape /opt/jailscrape
+ADD conf.env /opt/jailscrape/
 
 ADD docker-entrypoint.sh /opt/
 
