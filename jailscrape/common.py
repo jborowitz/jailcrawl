@@ -53,6 +53,7 @@ def record_error(message, page_number_within_scrape, roster_row):
     message = {
             "County": county,
             "State": state,
+            "Message": message
             }
     sns = boto3.client('sns')
     response = sns.publish(
