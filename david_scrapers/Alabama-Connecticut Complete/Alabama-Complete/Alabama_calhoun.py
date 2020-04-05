@@ -31,6 +31,8 @@ def main(roster_row):
 
         ##########
         # Begin core specific scraping code
+        assert roster_row['State'].lower() == 'alabama'
+        assert roster_row['County'].lower() == 'calhoun'
         pages = []
         #Wait        
         time.sleep(np.random.uniform(5,10,1))
