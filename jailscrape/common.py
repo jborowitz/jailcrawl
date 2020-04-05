@@ -32,12 +32,14 @@ s3 = boto3.resource(
     #aws_secret_access_key=ACCESS_KEY
 )
 
-def save_to_s3(page_data, page_number_within_scrape, roster_row):
+def save_to_s3(page_data, page_number_within_scrape, roster_row, filetype='html'):
     county = roster_row['County']
     state = roster_row['State']
-
     date_collected = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    filename = state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.html'.format(page_number_within_scrape)
+    if filetype == 'pdf':
+        filename = state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.pdf'.format(page_number_within_scrape)
+    else:
+        filename = state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.html'.format(page_number_within_scrape)
     print(filename)
     logger.info('Saved file: _%s_', filename)
     s3.Object(BUCKET,filename).put(Body=page_data)
