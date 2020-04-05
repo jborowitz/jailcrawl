@@ -9,7 +9,7 @@ import sys
 from io import StringIO
 from joblib import Parallel, delayed
 import requests
-from jailscrape.common import save_to_s3, get_browser, get_logger
+from jailscrape.common import save_to_s3, get_browser, get_logger, record_error
 import watchtower
 
 ROW_INDEX = 1 # Change this for each scraper
@@ -81,6 +81,7 @@ def main(roster_row):
         
     except Exception as errorMessage:
         browser.close()
+        import ipdb; ipdb.set_trace()
         record_error(str(errorMessage), page_index, roster_row)
         # Record error in S3
         logger.error('Error: %s', errorMessage)
