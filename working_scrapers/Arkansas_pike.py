@@ -32,7 +32,7 @@ def main(roster_row):
         ##########
         # Begin core specific scraping code
         assert roster_row['State'].lower() == 'arkansas'
-        assert roster_row['County'].lower() == 'perry'
+        assert roster_row['County'].lower() == 'pike'
         """
         Inmateaid's search doesn't depend on initial letter; it searches for
         all names that contain the selected letter. It's more efficient to
