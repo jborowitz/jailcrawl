@@ -37,17 +37,18 @@ def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
 
+        # Here are standard variable values/how to initialize them.
+        # These aren't initialized here since in the save_single_page
+        # case, they can be done in the called function
+        #browser = get_browser() # Get a standard browser
+        #urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+        #page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
+        #logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
+
         ##########
         # Begin core specific scraping code
         if roster_row['State'].lower() != THIS_STATE or roster_row['County'].lower() != THIS_COUNTY:
             raise Exception("Expected county definition info from _%s, %s_, but found info: _%s_" % (THIS_COUNTY, THIS_STATE, roster_row))
-        logger = get_logger(roster_row) # Get a standard logger
-        browser = get_browser() # Get a standard browser
-        logger.info('using save_single_html_page for _%s, %s', roster_row['County'], roster_row['State']) # Log the chosen URL
-
-        urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
-        page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
-        logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
         crawlers.save_single_page(roster_row) # try to call a known crawler if possible
         # End core specific scraping code
         ##########
