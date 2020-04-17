@@ -50,6 +50,9 @@ def main(roster_row):
         if roster_row['State'].lower() != THIS_STATE or roster_row['County'].lower() != THIS_COUNTY:
             raise Exception("Expected county definition info from _%s, %s_, but found info: _%s_" % (THIS_COUNTY, THIS_STATE, roster_row))
         crawlers.save_single_page(roster_row) # try to call a known crawler if possible
+        ## Code to save a page and log appropriately
+        #save_to_s3(store_source, page_index, roster_row)
+        #logger.info('Saved page _%s_', page_index)
         # End core specific scraping code
         ##########
 
