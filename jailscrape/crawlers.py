@@ -17,6 +17,7 @@ def save_single_page(roster_row, filetype='html'):
         page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
         logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
         #Boilerplate code setting up logger, getting initial URL
+        time.sleep(np.random.uniform(5,10,1))
 
         #Given the urlAddress passed to the function we will navigate to the page
         if filetype=='html':
