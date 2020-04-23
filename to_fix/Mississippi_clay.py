@@ -28,11 +28,11 @@ import math
 # to have a large, maximal set here and to bulk-edit files to add to
 # these.
 
-ROW_INDEX = 490 # Change this for each scraper. This references the row
+ROW_INDEX = 489 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
 THIS_STATE = 'mississippi' # Change the current state/county information. 
-THIS_COUNTY = 'desoto'
+THIS_COUNTY = 'clay'
 def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
@@ -40,7 +40,7 @@ def main(roster_row):
         # Here are standard variable values/how to initialize them.
         # These aren't initialized here since in the save_single_page
         # case, they can be done in the called function
-        browser = get_browser() # Get a standard browser
+        #browser = get_browser() # Get a standard browser
         urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
         page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
         logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
@@ -49,48 +49,32 @@ def main(roster_row):
         # Begin core specific scraping code
         if roster_row['State'].lower() != THIS_STATE or roster_row['County'].lower() != THIS_COUNTY:
             raise Exception("Expected county definition info from _%s, %s_, but found info: _%s_" % (THIS_COUNTY, THIS_STATE, roster_row))
-        time.sleep(np.random.uniform(5,10,1))
+        baseURL = urlAddress + '?grp={}'
+        req = requests.get(urlAddress)
         
-        lastpage = False
-        pages = []
-        names = []
-        #Get first page
-        store_source = browser.page_source
+        #Extract the HTML
+        store_source = req.content
         save_to_s3(store_source, page_index, roster_row)
         logger.info('Saved page _%s_', page_index)
+
         soup = BeautifulSoup(store_source, 'lxml')
-        firstentry = soup.find('div', {'class': 'x-grid3-cell-inner x-grid3-col-3'})
+        #Extract number of inmates:
+        inmate_roster = int(re.sub("\D", "", soup.find('span', {"class":"ptitles"}).text))
+        logger.info('Found _%s_ inmates at 10 per page', inmate_roster)
+        #10 entries per page; get number of pages by dividing by 10, rounding up.
+        num_pages = math.ceil(inmate_roster/10)
         
-        try:
-            names.append(firstentry.text)
-        except:
-            lastpage = True
-            
-        pages.append(store_source)
         
-        while lastpage == False:
-            time.sleep(np.random.uniform(5,10,1))
-            #Navigate to next page
-            nextpage = browser.find_element_by_xpath('//*[@id="ext-gen110"]')
-            nextpage.click()
+        #Mark the time the file is collected
+        date_collected = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        for page in range(0, num_pages):
             
-            #Wait
-            time.sleep(np.random.uniform(5, 10, 1))
-            
-            #Extract the HTML
-            store_source = browser.page_source
             page_index += 1
+            time.sleep(np.random.uniform(5,10,1))
+            req = requests.get(baseURL.format((page+1)*10))
+            store_source = req.content
             save_to_s3(store_source, page_index, roster_row)
             logger.info('Saved page _%s_', page_index)
-            soup = BeautifulSoup(store_source, 'lxml')
-            firstentry = soup.find('div', {'class': 'x-grid3-cell-inner x-grid3-col-3'})
-            
-            
-            if names[-1] == firstentry.text:
-                lastpage = True
-            else:
-                pages.append(store_source)
-                names.append(firstentry.text)
         # End core specific scraping code
         ##########
 

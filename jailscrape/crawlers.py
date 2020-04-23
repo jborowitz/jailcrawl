@@ -106,3 +106,59 @@ def mugshots_crawler(roster_row):
         logger.error('Error: %s', errorMessage)
         # Log error
         sys.exit(1)
+
+def public_safety_web_crawler(roster_row):
+    logger = get_logger(roster_row) # Get a standard logger
+    browser = get_browser() # Get a standard browser
+    urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+    if 'omsweb' not in urlAddress:
+        raise Exception("Appears that this site _%s_ is not a public safety web site" % urlAddress)
+    page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
+    logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
+
+    browser.get(urlAddress) 
+    #Use elements like below to find xpath keys and click through 
+    time.sleep(np.random.uniform(5,10,1))
+    
+    lastpage = False
+    pages = []
+    names = []
+    #Get first page
+    store_source = browser.page_source
+    pages.append(store_source)
+    soup = BeautifulSoup(store_source, 'lxml')
+    firstentry = soup.find('div', {'class': 'x-grid3-cell-inner x-grid3-col-3'})
+    
+    try:
+        names.append(firstentry.text)
+    except:
+        lastpage = True
+    
+    while lastpage == False:
+        time.sleep(np.random.uniform(5,10,1))
+        #Navigate to next page
+        nextpage = browser.find_element_by_xpath('//*[@id="ext-gen110"]')
+        nextpage.click()
+        
+        #Wait
+        time.sleep(np.random.uniform(5, 10, 1))
+        
+        #Extract the HTML
+        store_source = browser.page_source
+        soup = BeautifulSoup(store_source, 'lxml')
+        firstentry = soup.find('div', {'class': 'x-grid3-cell-inner x-grid3-col-3'})
+        
+        
+        if names[-1] == firstentry.text:
+            lastpage = True
+        else:
+            pages.append(store_source)
+            names.append(firstentry.text)
+
+    for store_source in pages:
+        save_to_s3(store_source, page_index, roster_row)
+        page_index += 1
+        logger.info('Saved page _%s_', page_index)
+
+    #Close the browser
+    logger.info('complete!')
