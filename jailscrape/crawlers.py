@@ -2,6 +2,8 @@ import ipdb
 import requests
 from jailscrape.common import save_to_s3, get_browser, get_logger, record_error
 import time
+import math
+import re
 from bs4 import BeautifulSoup
 import sys
 import numpy as np
@@ -162,3 +164,136 @@ def public_safety_web_crawler(roster_row):
 
     #Close the browser
     logger.info('complete!')
+
+def roster_php(roster_row, num_per_page=20):
+    try:
+        logger = get_logger(roster_row) # Get a standard logger
+        browser = get_browser() # Get a standard browser
+        urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+        if 'roster.php' not in urlAddress:
+            raise Exception("Appears that this site _%s_ is not a roster.php website - using the wrong crawler" % urlAddress)
+        page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
+        logger.info('Choosing roster_php crawler') # Name crawler
+        logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
+
+        suffix = '?grp={}'
+        browser.get(urlAddress) 
+        #Use elements like below to find xpath keys and click through 
+        time.sleep(np.random.uniform(5,10,1))
+        store_source = browser.page_source
+        soup = BeautifulSoup(store_source, 'lxml')
+        inmate_roster = int(re.sub("\D", "", soup.find('span', {"class":"ptitles"}).text))        #10 entries per page; get number of pages by dividing by 10, rounding up.
+        num_pages = math.ceil(inmate_roster/num_per_page)
+        pages = []
+
+        for page in range(0, num_pages):
+            
+            time.sleep(np.random.uniform(5,10,1))
+            url = urlAddress+suffix.format((page+1)*10)
+            logger.info('getting url _%s_', url)
+            browser.get(url)
+            store_source = browser.page_source
+            logger.info('Found page _%s_', page)
+            pages.append(store_source)
+        for store_source in pages:
+            page_index += 1
+            save_to_s3(store_source, page_index, roster_row)
+            logger.info('Saved page _%s_', page_index)
+    except Exception as errorMessage:
+        try:
+            record_error(message=str(errorMessage), roster_row=roster_row, page_number_within_scrape=page_index, browser=browser)
+        except:
+            record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+        browser.close()
+        # Record error in S3 for a general error
+        logger.error('Error: %s', errorMessage)
+        # Log error
+        sys.exit(1)
+def inmate_aid(roster_row):
+    try:
+        logger = get_logger(roster_row) # Get a standard logger
+        browser = get_browser() # Get a standard browser
+        urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+        if 'inmateaid' not in urlAddress:
+            raise Exception("Appears that this site _%s_ is not an inmate aid website - using the wrong crawler" % urlAddress)
+        logger.info('Choosing inmate_aid crawler') # Name crawler
+        page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
+        letters = ['A', 'E', 'I', 'N', 'O', 'R', 'U', 'Y']
+        
+        
+        #Create empty list to store page sources:
+        pages = []
+        
+        #Create empty list to store index of {letter}_{pagenumber}
+        letters_pages = []
+        
+        #This will use the root directory defined at the top of the script to identify where the chromdriver for selium is located
+        
+        for letter in letters:
+            
+            browser.get(urlAddress) 
+            #Use elements like below to find xpath keys and click through 
+            #Click I agree to terms
+            time.sleep(np.random.uniform(5,10,1))
+            searchbox = browser.find_element_by_xpath('/html/body/div/div/div/div[2]/div[2]/div[2]/form/div[2]/input')
+            searchbox.send_keys(letter)
+            
+            searchbutton = browser.find_element_by_xpath('/html/body/div/div/div/div[2]/div[2]/div[2]/form/div[4]/button')
+            searchbutton.click()
+            
+            #Wait
+            time.sleep(np.random.uniform(5,10,1))
+        
+            #Default variables for entry with no navigation bar:
+            split_pages = False
+            page_index = 1
+            finished = False
+            
+            #Check for navigation bar:
+            try:
+                nextpage = browser.find_element_by_link_text('Next →')
+                '/html/body/div/div/div/div[2]/div[3]/div[12]/ul/li[7]/a'
+                split_pages = True
+            except:
+                pass
+            
+            #Extract the HTML
+            store_source = browser.page_source
+            pages.append(store_source)
+            page_name = letter+'_{}'.format(page_index)
+            page_index += 1
+            save_to_s3(store_source, page_name, roster_row)
+            logger.info('Saved page _%s_', page_name)
+
+            #Perform subroutine if multiple pages are present
+            if split_pages == True:
+                while finished == False:
+                    try:
+                        nextpage = browser.find_element_by_link_text('Next →')
+                        nextpage.click()
+                        page_index += 1
+                        
+                        #Wait
+                        time.sleep(np.random.uniform(5,10,1))
+                        
+                        #Extract the HTML
+                        store_source = browser.page_source
+                        pages.append(store_source)
+                        
+                        #Provide index in the format "S_4" for page 4 of letter S:
+                        page_name = letter+'_{}'.format(page_index)
+                        save_to_s3(store_source, page_name, roster_row)
+                        logger.info('Saved page _%s_', page_name)
+                                    
+                    except:
+                        finished = True
+    except Exception as errorMessage:
+        try:
+            record_error(message=str(errorMessage), roster_row=roster_row, page_number_within_scrape=page_index, browser=browser)
+        except:
+            record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+        browser.close()
+        # Record error in S3 for a general error
+        logger.error('Error: %s', errorMessage)
+        # Log error
+        sys.exit(1)
