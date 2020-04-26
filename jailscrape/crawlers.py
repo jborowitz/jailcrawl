@@ -50,7 +50,7 @@ def mugshots_crawler(roster_row):
     try:
         logger = get_logger(roster_row) # get a standard logger
         browser = get_browser() # get a standard browser
-        logger.info('using mugshots_crawler for _%s, %s', roster_row['County'], roster_row['State']) # Log the chosen URL
+        logger.info('using mugshots_crawler for _%s, %s_', roster_row['County'], roster_row['State']) # Log the chosen URL
 
         urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
         page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages

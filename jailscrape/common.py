@@ -18,7 +18,7 @@ FAILURE_SNS_TOPIC = configs['FAILURE_SNS_TOPIC']
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.addHandler(watchtower.CloudWatchLogHandler())
-logger.info('Set BUCKET to _%s',BUCKET)
+logger.info('Set BUCKET to _%s_',BUCKET)
 s3 = boto3.resource( # Do not specificy keys for boto3. What's happening here is 
     's3',
     region_name='us-east-1',
@@ -82,3 +82,10 @@ def get_browser():
     chrome_options.add_argument("--no-sandbox")
     browser = webdriver.Chrome(options=chrome_options)
     return browser
+
+def save_pages_array(pages, roster_row):
+    page_index = 0
+    for page_source in pages:
+        save_to_s3(store_source, page_index, roster_row)
+        logger.info('Saved page _%s_', page_index)
+        page_index += 1
