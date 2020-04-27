@@ -15,7 +15,7 @@ import sys
 from io import StringIO
 from joblib import Parallel, delayed
 import requests
-from jailscrape.common import save_to_s3, get_browser, get_logger, record_error
+from jailscrape.common import save_to_s3, get_browser, get_logger, record_error, save_pages_array
 from jailscrape import crawlers
 # jailscrape.common is a file that is part of the project which keeps
 # most common boilerplate code out of this file
@@ -28,11 +28,11 @@ import math
 # to have a large, maximal set here and to bulk-edit files to add to
 # these.
 
-ROW_INDEX = 426 # Change this for each scraper. This references the row
+ROW_INDEX = 567 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
-THIS_STATE = 'minnesota' # Change the current state/county information. 
-THIS_COUNTY = 'becker'
+THIS_STATE = 'missouri' # Change the current state/county information. 
+THIS_COUNTY = 'st clair'
 def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
@@ -41,15 +41,45 @@ def main(roster_row):
         # These aren't initialized here since in the save_single_page
         # case, they can be done in the called function
         #browser = get_browser() # Get a standard browser
-        #urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+        urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
         #page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
-        #logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
+        logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
 
         ##########
         # Begin core specific scraping code
         if roster_row['State'].lower() != THIS_STATE or roster_row['County'].lower() != THIS_COUNTY:
             raise Exception("Expected county definition info from _%s, %s_, but found info: _%s_" % (THIS_COUNTY, THIS_STATE, roster_row))
-        crawlers.save_single_page(roster_row) # try to call a known crawler if possible
+        pages = []
+        suffix = '?orderby=date&sort=desc&grp={}'
+        req = requests.get(urlAddress)
+        
+        #Extract the HTML
+        store_source = req.content
+        soup = BeautifulSoup(store_source, 'lxml')
+        pages.append(store_source)
+        
+        #Get number of pages:
+        #No forward/back button; only a list of links to separate pages:
+        navigation = soup.find('div', {'style':'margin-right:auto; margin-left:auto;'})
+        navbar = navigation.find_all('div', {'style':'padding:2px;'})
+        pagelinks = navbar[2].find_all('a', href=True)
+        
+        num_pages = len(pagelinks)
+        
+        #Toggle local/s3 storage
+        aws = True
+        
+        #Mark the time the file is collected
+        date_collected = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        for page in range(0, num_pages):
+            
+            time.sleep(np.random.uniform(5,10,1))
+            req = requests.get(urlAddress+suffix.format(page))
+            store_source = req.content
+            pages.append(store_source)
+
+
+        save_pages_array(pages, roster_row)
         ## Code to save a page and log appropriately
         #save_to_s3(store_source, page_index, roster_row)
         #logger.info('Saved page _%s_', page_index)
@@ -61,8 +91,8 @@ def main(roster_row):
 
     except Exception as errorMessage:
         try:
-            browser.close()
             record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+            browser.close()
         except:
             record_error(message=str(errorMessage), roster_row=roster_row)
 

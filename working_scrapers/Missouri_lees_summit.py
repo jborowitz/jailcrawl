@@ -28,12 +28,16 @@ import math
 # to have a large, maximal set here and to bulk-edit files to add to
 # these.
 
-ROW_INDEX = 426 # Change this for each scraper. This references the row
+ROW_INDEX = 547 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
-THIS_STATE = 'minnesota' # Change the current state/county information. 
-THIS_COUNTY = 'becker'
+THIS_STATE = 'missouri' # Change the current state/county information. 
+THIS_COUNTY = 'lees summit'
 def main(roster_row):
+    """
+    Duplicate of Cass, MO site
+    Lee's Summit is a city located in Jackson and Cass counties
+    """
     try:
         logger = get_logger(roster_row) # Get a standard logger
 
@@ -60,12 +64,7 @@ def main(roster_row):
         logger.info('complete!')
 
     except Exception as errorMessage:
-        try:
-            browser.close()
-            record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
-        except:
-            record_error(message=str(errorMessage), roster_row=roster_row)
-
+        record_error(message=str(errorMessage), roster_row=roster_row)
         # Record error in S3 for a general error
         logger.error('Error: %s', errorMessage)
         # Log error

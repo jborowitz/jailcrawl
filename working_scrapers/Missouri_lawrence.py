@@ -28,11 +28,11 @@ import math
 # to have a large, maximal set here and to bulk-edit files to add to
 # these.
 
-ROW_INDEX = 426 # Change this for each scraper. This references the row
+ROW_INDEX = 546 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
-THIS_STATE = 'minnesota' # Change the current state/county information. 
-THIS_COUNTY = 'becker'
+THIS_STATE = 'missouri' # Change the current state/county information. 
+THIS_COUNTY = 'lawrence'
 def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
@@ -49,7 +49,7 @@ def main(roster_row):
         # Begin core specific scraping code
         if roster_row['State'].lower() != THIS_STATE or roster_row['County'].lower() != THIS_COUNTY:
             raise Exception("Expected county definition info from _%s, %s_, but found info: _%s_" % (THIS_COUNTY, THIS_STATE, roster_row))
-        crawlers.save_single_page(roster_row) # try to call a known crawler if possible
+        crawlers.roster_php(roster_row, 10) # try to call a known crawler if possible
         ## Code to save a page and log appropriately
         #save_to_s3(store_source, page_index, roster_row)
         #logger.info('Saved page _%s_', page_index)
@@ -60,12 +60,7 @@ def main(roster_row):
         logger.info('complete!')
 
     except Exception as errorMessage:
-        try:
-            browser.close()
-            record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
-        except:
-            record_error(message=str(errorMessage), roster_row=roster_row)
-
+        record_error(message=str(errorMessage), roster_row=roster_row)
         # Record error in S3 for a general error
         logger.error('Error: %s', errorMessage)
         # Log error

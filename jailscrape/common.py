@@ -57,7 +57,10 @@ def record_error(message,  roster_row, browser=None, page_number_within_scrape='
                 }
         logger.error('Error message: _%s_', sns_message)
 
-    s3.Object(BUCKET,filename).put(Body=browser.page_source)
+    try:
+        s3.Object(BUCKET,filename).put(Body=browser.page_source)
+    except:
+        logger.warning("No browser defined, so no error page saved")
     sns_message = {
             "County": county,
             "State": state,
@@ -85,7 +88,7 @@ def get_browser():
 
 def save_pages_array(pages, roster_row):
     page_index = 0
-    for page_source in pages:
+    for store_source in pages:
         save_to_s3(store_source, page_index, roster_row)
         logger.info('Saved page _%s_', page_index)
         page_index += 1
