@@ -297,3 +297,67 @@ def inmate_aid(roster_row):
         logger.error('Error: %s', errorMessage)
         # Log error
         sys.exit(1)
+
+def smartweb_crawler(roster_row, filetype='html'):
+    try:
+        logger = get_logger(roster_row) # Get a standard logger
+        browser = get_browser() # Get a standard browser
+        logger.info('using smartweb_crawler for _%s, %s', roster_row['County'], roster_row['State']) # Log the chosen URL
+
+        urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+        page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
+        logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
+        #Boilerplate code setting up logger, getting initial URL
+        
+        #Navigate to page
+        browser.get(urlAddress)
+        
+        #Wait
+        time.sleep(np.random.uniform(5,10,1))
+        
+        #Assume there is a second page
+        more_results = True
+        
+        #While a second page exists, click the "load more" button
+        while more_results == True:
+            try:
+                browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                load_more = browser.find_element_by_xpath('//*[@id="LoadMoreButton"]/p[1]')
+                load_more.click()
+                #Loading can be slow; if interrupted, it will yield partial alphabet:
+                time.sleep(np.random.uniform(15, 20, 1))
+
+            except:
+                more_results = False
+            
+        #Expand "[+]" buttons:    
+        finished = False
+        
+        while not finished:
+
+            try:
+                expandable = browser.find_element_by_xpath("//td[contains(text(),'[+]')]")
+            except:
+                finished = True
+            time.sleep(np.random.uniform(0.05,0.2,1))
+            try:
+                expandable.click()
+            except:
+                pass
+            time.sleep(np.random.uniform(0.05,0.2,1))
+
+        store_source = browser.page_source
+        
+        save_to_s3(store_source, page_index, roster_row, filetype=filetype) # Safe result to s3. This call includes logging and file formatting
+        logger.info('Saved page _%s_', page_index)
+        return True
+    except Exception as errorMessage:
+        try:
+            record_error(message=str(errorMessage), roster_row=roster_row, page_number_within_scrape=page_index, browser=browser)
+        except:
+            record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+        browser.close()
+        # Record error in S3 for a general error
+        logger.error('Error: %s', errorMessage)
+        # Log error
+        sys.exit(1)
