@@ -22,11 +22,11 @@ import math
 # to have a large, maximal set here and to bulk-edit files to add to
 # these.
 
-ROW_INDEX = 822 # Change this for each scraper. This references the row
+ROW_INDEX = 885 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
-THIS_STATE = 'pennsylvania' # Change the current state/county information. 
-THIS_COUNTY = 'bradford'
+THIS_STATE = 'tennessee' # Change the current state/county information. 
+THIS_COUNTY = 'putnam'
 
 """IFRAME SITE:
 
