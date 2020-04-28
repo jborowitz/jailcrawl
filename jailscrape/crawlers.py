@@ -182,7 +182,11 @@ def roster_php(roster_row, num_per_page=20):
         time.sleep(np.random.uniform(5,10,1))
         store_source = browser.page_source
         soup = BeautifulSoup(store_source, 'lxml')
-        inmate_roster = int(re.sub("\D", "", soup.find('span', {"class":"ptitles"}).text))        #10 entries per page; get number of pages by dividing by 10, rounding up.
+        try:
+            inmate_roster = int(re.sub("\D", "", soup.find('span', {"class":"ptitles"}).text))        #10 entries per page; get number of pages by dividing by 10, rounding up.
+        except:
+            inmate_roster = int(re.sub("\D", "", soup.find('h2', {"class":"large-6 columns ptitles"}).text))        #10 entries per page; get number of pages by dividing by 10, rounding up.
+#">Inmate Roster (151)</h2>
         num_pages = math.ceil(inmate_roster/num_per_page)
         pages = []
 
