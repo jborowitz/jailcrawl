@@ -41,7 +41,7 @@ def main(roster_row):
         # Begin core specific scraping code
         if roster_row['State'].lower() != THIS_STATE or roster_row['County'].lower() != THIS_COUNTY:
             raise Exception("Expected county definition info from _%s, %s_, but found info: _%s_" % (THIS_COUNTY, THIS_STATE, roster_row))
-        crawlers.public_safety_web_crawler(roster_row)
+        crawlers.omsweb_crawler(roster_row)
         # End core specific scraping code
         ##########
 

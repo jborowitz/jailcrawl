@@ -213,6 +213,7 @@ def roster_php(roster_row, num_per_page=20):
         logger.error('Error: %s', errorMessage)
         # Log error
         sys.exit(1)
+
 def inmate_aid(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
@@ -365,3 +366,45 @@ def smartweb_crawler(roster_row, filetype='html'):
         logger.error('Error: %s', errorMessage)
         # Log error
         sys.exit(1)
+
+def omsweb_crawler(roster_row):
+    logger = get_logger(roster_row) # Get a standard logger
+    browser = get_browser() # Get a standard browser
+    urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+    if 'omsweb' not in urlAddress:
+        raise Exception("Appears that this site _%s_ is not a public safety web site" % urlAddress)
+    page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
+    logger.info('using omsweb_crawler for _%s, %s_', roster_row['County'], roster_row['State']) # Log the chosen URL
+    logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
+
+    browser.get(urlAddress)  
+    time.sleep(np.random.uniform(5,10,1))
+    
+    pages = []
+    
+    store_source = browser.page_source
+    pages.append(store_source)
+
+    finished = False
+    
+    while not finished:
+        
+        try:
+            nextpage = browser.find_element_by_xpath('//*[@id="ext-gen110"]')
+            nextpage.click()
+            time.sleep(np.random.uniform(5,10,1))
+            store_source = browser.page_source
+            if store_source not in pages:
+                pages.append(store_source)
+            else:
+                finished = True
+            
+        except:
+            finished = True
+
+    for store_source, page_index in zip(pages, range(len(pages))):
+        save_to_s3(store_source, page_index, roster_row)
+        logger.info('Saved page _%s_', page_index)
+
+    #Close the browser
+    logger.info('complete!')
