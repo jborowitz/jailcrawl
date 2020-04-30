@@ -193,7 +193,7 @@ def roster_php(roster_row, num_per_page=20):
         for page in range(0, num_pages):
             
             time.sleep(np.random.uniform(5,10,1))
-            url = urlAddress+suffix.format((page+1)*10)
+            url = urlAddress+suffix.format((page+1)*num_per_page)
             logger.info('getting url _%s_', url)
             browser.get(url)
             store_source = browser.page_source
