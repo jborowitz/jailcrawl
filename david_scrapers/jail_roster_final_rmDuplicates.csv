@@ -590,7 +590,7 @@ Montana,silver bow,https://co.silverbow.mt.us/230/Detention-Center,Direct,Manual
 Montana,yellowstone,http://www.co.yellowstone.mt.gov/sheriff/detention/dcsearch.asp,Direct,Manual,Day,html,,,Inactive,,,,,
 Nebraska,douglas,https://corrections.dccorr.com/inmate-locator,Direct,Manual,Day,html,,,Inactive,,,,,
 Nebraska,keith,http://216.75.124.83:8080/TDT_Viewer/actions/Navigation.do?direction=inmateInformation&operation=viewAll,Direct,Manual,Day,html,,,Inactive,,,,,
-Nebraska,boyd,http://www.jailtracker.com/boydcodc/boydcountydetention_inmatelist.html,http://www.boydcounty.ne.gov/webpages/sheriff/sheriff.html,Andrea,,Inactive,,,,,,,,
+Nebraska,boyd,https://www.inmateaid.com/inmate-locator/boyd-county-ne-jail.amp,http://www.boydcounty.ne.gov/webpages/sheriff/sheriff.html,Andrea,,Inactive,,,,,,,,
 Nebraska,gage,http://www.gagecountysheriff.us/pages.do?acid=2377&aid=4310,Direct,Manual,Day,html,,,Inactive,,,,,
 Nebraska,hall,https://www.hallcountyne.gov/links/reports/inmates/current_inmates.php,Direct,Manual,Day,html,,,Inactive,,,,,
 Nebraska,lincoln,http://inmateroster.lincolncountysheriff.us/,Direct,Manual,Day,html,,,Inactive,,,,,

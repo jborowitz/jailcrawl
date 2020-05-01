@@ -15,7 +15,7 @@ import sys
 from io import StringIO
 from joblib import Parallel, delayed
 import requests
-from jailscrape.common import save_to_s3, get_browser, get_logger, record_error, save_pages_array
+from jailscrape.common import save_to_s3, get_browser, get_logger, record_error
 from jailscrape import crawlers
 # jailscrape.common is a file that is part of the project which keeps
 # most common boilerplate code out of this file
@@ -28,15 +28,22 @@ import math
 # to have a large, maximal set here and to bulk-edit files to add to
 # these.
 
-ROW_INDEX = 426 # Change this for each scraper. This references the row
+ROW_INDEX = 593 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
-THIS_STATE = 'minnesota' # Change the current state/county information. 
-THIS_COUNTY = 'becker'
+THIS_STATE = 'nebraska' # Change the current state/county information. 
+THIS_COUNTY = 'hall'
 def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
 
+        """
+        Supplied url included session id
+        
+        OLD URL: https://www.hallcountyne.gov/links/reports/inmates/current_inmates.php?-session=hcv:6C5B5CF707d0c342CAMQGm15AA33
+        UPDATED URL: https://www.hallcountyne.gov/links/reports/inmates/current_inmates.php
+        
+        """
         # Here are standard variable values/how to initialize them.
         # These aren't initialized here since in the save_single_page
         # case, they can be done in the called function
