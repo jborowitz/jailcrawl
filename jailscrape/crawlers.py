@@ -7,6 +7,7 @@ import re
 from bs4 import BeautifulSoup
 import sys
 import numpy as np
+from functools import wraps, partial
 
 
 def save_single_page(roster_row, filetype='html'):
@@ -110,60 +111,71 @@ def mugshots_crawler(roster_row):
         sys.exit(1)
 
 def public_safety_web_crawler(roster_row):
-    logger = get_logger(roster_row) # Get a standard logger
-    browser = get_browser() # Get a standard browser
-    urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
-    if 'omsweb' not in urlAddress:
-        raise Exception("Appears that this site _%s_ is not a public safety web site" % urlAddress)
-    page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
-    logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
-
-    browser.get(urlAddress) 
-    #Use elements like below to find xpath keys and click through 
-    time.sleep(np.random.uniform(5,10,1))
-    
-    lastpage = False
-    pages = []
-    names = []
-    #Get first page
-    store_source = browser.page_source
-    pages.append(store_source)
-    soup = BeautifulSoup(store_source, 'lxml')
-    firstentry = soup.find('div', {'class': 'x-grid3-cell-inner x-grid3-col-3'})
-    
     try:
-        names.append(firstentry.text)
-    except:
-        lastpage = True
-    
-    while lastpage == False:
+        logger = get_logger(roster_row) # Get a standard logger
+        browser = get_browser() # Get a standard browser
+        urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+        if 'omsweb' not in urlAddress:
+            raise Exception("Appears that this site _%s_ is not a public safety web site" % urlAddress)
+        page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
+        logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
+
+        browser.get(urlAddress) 
+        #Use elements like below to find xpath keys and click through 
         time.sleep(np.random.uniform(5,10,1))
-        #Navigate to next page
-        nextpage = browser.find_element_by_xpath('//*[@id="ext-gen110"]')
-        nextpage.click()
         
-        #Wait
-        time.sleep(np.random.uniform(5, 10, 1))
-        
-        #Extract the HTML
+        lastpage = False
+        pages = []
+        names = []
+        #Get first page
         store_source = browser.page_source
+        pages.append(store_source)
         soup = BeautifulSoup(store_source, 'lxml')
         firstentry = soup.find('div', {'class': 'x-grid3-cell-inner x-grid3-col-3'})
         
-        
-        if names[-1] == firstentry.text:
-            lastpage = True
-        else:
-            pages.append(store_source)
+        try:
             names.append(firstentry.text)
+        except:
+            lastpage = True
+        
+        while lastpage == False:
+            time.sleep(np.random.uniform(5,10,1))
+            #Navigate to next page
+            nextpage = browser.find_element_by_xpath('//*[@id="ext-gen110"]')
+            nextpage.click()
+            
+            #Wait
+            time.sleep(np.random.uniform(5, 10, 1))
+            
+            #Extract the HTML
+            store_source = browser.page_source
+            soup = BeautifulSoup(store_source, 'lxml')
+            firstentry = soup.find('div', {'class': 'x-grid3-cell-inner x-grid3-col-3'})
+            
+            
+            if names[-1] == firstentry.text:
+                lastpage = True
+            else:
+                pages.append(store_source)
+                names.append(firstentry.text)
 
-    for store_source in pages:
-        save_to_s3(store_source, page_index, roster_row)
-        page_index += 1
-        logger.info('Saved page _%s_', page_index)
+        for store_source in pages:
+            save_to_s3(store_source, page_index, roster_row)
+            page_index += 1
+            logger.info('Saved page _%s_', page_index)
 
-    #Close the browser
-    logger.info('complete!')
+        #Close the browser
+        logger.info('complete!')
+    except:
+        try:
+            record_error(message=str(errorMessage), roster_row=roster_row, page_number_within_scrape=page_index, browser=browser)
+        except:
+            record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+        browser.close()
+        # Record error in S3 for a general error
+        logger.error('Error: %s', errorMessage)
+        # Log error
+        sys.exit(1)
 
 def roster_php(roster_row, num_per_page=20):
     try:
@@ -368,43 +380,232 @@ def smartweb_crawler(roster_row, filetype='html'):
         sys.exit(1)
 
 def omsweb_crawler(roster_row):
-    logger = get_logger(roster_row) # Get a standard logger
-    browser = get_browser() # Get a standard browser
-    urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
-    if 'omsweb' not in urlAddress:
-        raise Exception("Appears that this site _%s_ is not a public safety web site" % urlAddress)
-    page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
-    logger.info('using omsweb_crawler for _%s, %s_', roster_row['County'], roster_row['State']) # Log the chosen URL
-    logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
+    try:
+        logger = get_logger(roster_row) # Get a standard logger
+        browser = get_browser() # Get a standard browser
+        urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+        if 'omsweb' not in urlAddress:
+            raise Exception("Appears that this site _%s_ is not a public safety web site" % urlAddress)
+        logger.info('using omsweb_crawler for _%s, %s_', roster_row['County'], roster_row['State']) # Log the chosen URL
+        logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
 
-    browser.get(urlAddress)  
-    time.sleep(np.random.uniform(5,10,1))
-    
-    pages = []
-    
-    store_source = browser.page_source
-    pages.append(store_source)
-
-    finished = False
-    
-    while not finished:
+        browser.get(urlAddress)  
+        time.sleep(np.random.uniform(5,10,1))
         
-        try:
-            nextpage = browser.find_element_by_xpath('//*[@id="ext-gen110"]')
-            nextpage.click()
-            time.sleep(np.random.uniform(5,10,1))
-            store_source = browser.page_source
-            if store_source not in pages:
-                pages.append(store_source)
-            else:
-                finished = True
+        pages = []
+        
+        store_source = browser.page_source
+        pages.append(store_source)
+
+        finished = False
+        
+        while not finished:
             
+            try:
+                nextpage = browser.find_element_by_xpath('//*[@id="ext-gen110"]')
+                nextpage.click()
+                time.sleep(np.random.uniform(5,10,1))
+                store_source = browser.page_source
+                if store_source not in pages:
+                    pages.append(store_source)
+                else:
+                    finished = True
+                
+            except:
+                finished = True
+
+        #Close the browser
+        browser.close()
+
+        for store_source, page_index in zip(pages, range(len(pages))):
+            save_to_s3(store_source, page_index, roster_row)
+            logger.info('Saved page _%s_', page_index)
+
+        logger.info('complete!')
+    except:
+        try:
+            try:
+                page_index = len(pages)
+            except:
+                page_index = 0
+            record_error(message=str(errorMessage), roster_row=roster_row, page_number_within_scrape=page_index, browser=browser)
         except:
-            finished = True
+            record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+        browser.close()
+        # Record error in S3 for a general error
+        logger.error('Error: %s', errorMessage)
+        # Log error
+        sys.exit(1)
 
-    for store_source, page_index in zip(pages, range(len(pages))):
-        save_to_s3(store_source, page_index, roster_row)
-        logger.info('Saved page _%s_', page_index)
+def basic_multipage(roster_row, next_type, next_string):
+    try:
+        logger = get_logger(roster_row) # Get a standard logger
+        browser = get_browser() # Get a standard browser
+        urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+        if 'omsweb' not in urlAddress:
+            raise Exception("Appears that this site _%s_ is not a public safety web site" % urlAddress)
+        logger.info('using basic_multipage crawler for _%s, %s_', roster_row['County'], roster_row['State']) # Log the chosen URL
+        logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
 
-    #Close the browser
-    logger.info('complete!')
+        browser.get(urlAddress)  
+        time.sleep(np.random.uniform(5,10,1))
+        
+        pages = []
+        
+        store_source = browser.page_source
+        pages.append(store_source)
+
+        finished = False
+        
+        while not finished:
+                
+            try:
+                if next_type == 'id':
+                    nextpage = browser.find_element_by_id(next_string)
+                elif next_type == 'name':
+                    nextpage = browser.find_element_by_name(next_string)
+                elif next_type == 'xpath':
+                    nextpage = browser.find_element_by_xpath(next_string)
+                elif next_type == 'text':
+                    nextpage = browser.find_element_by_link_text(next_string)
+                elif next_type == 'ptext':
+                    nextpage = browser.find_element_by_partial_link_text(next_string)
+                elif next_type == 'tag':
+                    nextpage = browser.find_element_by_tag_name(next_string)
+                elif next_type == 'class':
+                    nextpage = browser.find_element_by_class_name(next_string)
+                elif next_type == 'css':
+                    nextpage = browser.find_element_by_css_selector(next_string)
+                    
+                nextpage.click()
+                time.sleep(np.random.uniform(10,15,1))
+                store_source = browser.page_source
+                if store_source not in pages:
+                    pages.append(store_source)
+                else:
+                    finished = True
+                
+            except:
+                finished = True
+
+        #Close the browser
+        browser.close()
+
+        for store_source, page_index in zip(pages, range(len(pages))):
+            save_to_s3(store_source, page_index, roster_row)
+            logger.info('Saved page _%s_', page_index)
+
+        logger.info('complete!')
+
+    except:
+        try:
+            try:
+                page_index = len(pages)
+            except:
+                page_index = 0
+            record_error(message=str(errorMessage), roster_row=roster_row, page_number_within_scrape=page_index, browser=browser)
+        except:
+            record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+        browser.close()
+        # Record error in S3 for a general error
+        logger.error('Error: %s', errorMessage)
+        # Log error
+        sys.exit(1)
+
+def multipage_wrapper(func, roster_row=None, next_type=None, next_string=None):
+    """
+    Decorator for county-specific navigation/bypass function.
+    Deploy using this format:
+    
+        wrapper = partial(crawlers.multipage_wrapper, roster_row=roster_row,
+            next_type='ptext', next_string='Next')
+        @wrapper
+        def yuma_arizona(browser):
+
+            #Click "search" button
+            searchbutton = browser.find_element_by_xpath('//*[@id="Inmate_Index"]/div[1]/form/div/div/input[1]')
+            searchbutton.click()
+            
+            #Wait
+            time.sleep(np.random.uniform(5,10,1))
+
+        yuma_arizona()
+
+    """
+    @wraps(func)
+    def _multipage_wrapper(*args, **kwargs):
+        try:
+            logger = get_logger(roster_row) # Get a standard logger
+            browser = get_browser() # Get a standard browser
+            urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+            logger.info('using multipage_wrapper for _%s, %s_', roster_row['County'], roster_row['State']) # Log the chosen URL
+            logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
+
+            browser.get(urlAddress)  
+            time.sleep(np.random.uniform(5,10,1))
+
+            func(browser, *args, **kwargs)
+            
+            pages = []
+            
+            store_source = browser.page_source
+            pages.append(store_source)
+
+            finished = False
+
+            while not finished:
+                
+                try:
+                    if next_type == 'id':
+                        nextpage = browser.find_element_by_id(next_string)
+                    elif next_type == 'name':
+                        nextpage = browser.find_element_by_name(next_string)
+                    elif next_type == 'xpath':
+                        nextpage = browser.find_element_by_xpath(next_string)
+                    elif next_type == 'text':
+                        nextpage = browser.find_element_by_link_text(next_string)
+                    elif next_type == 'ptext':
+                        nextpage = browser.find_element_by_partial_link_text(next_string)
+                    elif next_type == 'tag':
+                        nextpage = browser.find_element_by_tag_name(next_string)
+                    elif next_type == 'class':
+                        nextpage = browser.find_element_by_class_name(next_string)
+                    elif next_type == 'css':
+                        nextpage = browser.find_element_by_css_selector(next_string)
+                        
+                    nextpage.click()
+                    time.sleep(np.random.uniform(10,15,1))
+                    store_source = browser.page_source
+                    if store_source not in pages:
+                        pages.append(store_source)
+                    else:
+                        finished = True
+                    
+                except:
+                    finished = True
+
+            #Close the browser
+            browser.close()
+
+            for store_source, page_index in zip(pages, range(len(pages))):
+                save_to_s3(store_source, page_index, roster_row)
+                logger.info('Saved page _%s_', page_index)
+            
+            logger.info('complete!')
+        except:
+            try:
+                try:
+                    page_index = len(pages)
+                except:
+                    page_index = 0
+                record_error(message=str(errorMessage), roster_row=roster_row, page_number_within_scrape=page_index, browser=browser)
+            except:
+                record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+            browser.close()
+            # Record error in S3 for a general error
+            logger.error('Error: %s', errorMessage)
+            # Log error
+            sys.exit(1)
+
+    return _multipage_wrapper
+
