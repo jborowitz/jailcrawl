@@ -36,6 +36,8 @@ def save_to_s3(page_data, page_number_within_scrape, roster_row, filetype='html'
     date_collected = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if filetype == 'pdf':
         filename = state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.pdf'.format(page_number_within_scrape)
+    if filetype == 'xls':
+        filename = state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.xls'.format(page_number_within_scrape)
     else:
         filename = state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.html'.format(page_number_within_scrape)
     print(filename)

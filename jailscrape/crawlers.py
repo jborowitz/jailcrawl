@@ -26,6 +26,9 @@ def save_single_page(roster_row, filetype='html'):
         if filetype=='html':
             browser.get(urlAddress) 
             store_source = browser.page_source
+        elif filetype=='xls':
+            browser.get(urlAddress) 
+            store_source = browser.page_source
         else:
             response = requests.get(urlAddress)
             response.raise_for_status()
