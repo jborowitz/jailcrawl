@@ -1,3 +1,9 @@
 *.zip
 conf.env
 *.sw*
+*.pyc
+jailscrape/.DS_Store
+working_scrapers/.DS_Store
+to_fix/.DS_Store
+.DS_Store
+credentials
