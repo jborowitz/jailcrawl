@@ -92,7 +92,6 @@ def main(roster_row):
                         logger.info('Saved page _%s_', page_name)
                         pages.append(store_source)
                     except:
-                        import ipdb; ipdb.set_trace()
                         finished = True
 
         # End core specific scraping code

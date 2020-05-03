@@ -49,7 +49,6 @@ def main(roster_row):
         
     except Exception as errorMessage:
         browser.close()
-        import ipdb; ipdb.set_trace()
         record_error(str(errorMessage), page_index, roster_row)
         # Record error in S3
         logger.error('Error: %s', errorMessage)
