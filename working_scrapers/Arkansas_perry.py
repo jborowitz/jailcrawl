@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 import re
 import math
 
-ROW_INDEX = 50 # Change this for each scraper
+ROW_INDEX = 49 # Change this for each scraper
 def main(roster_row):
     try:
         logger = get_logger(roster_row)
