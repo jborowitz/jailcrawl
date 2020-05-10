@@ -36,7 +36,7 @@ def save_to_s3(page_data, page_number_within_scrape, roster_row, filetype='html'
     date_collected = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if filetype == 'pdf':
         filename = state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.pdf'.format(page_number_within_scrape)
-    if filetype == 'xls':
+    elif filetype == 'xls':
         filename = state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.xls'.format(page_number_within_scrape)
     else:
         filename = state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + '_page_{}.html'.format(page_number_within_scrape)
@@ -73,7 +73,6 @@ def record_error(message,  roster_row, browser=None, page_number_within_scrape='
     #sio = io.StringIO()
     #print(json.dumps(sns_message), file=sio)
     #sio.seek(0)
-    #ipdb.set_trace()
     sns = boto3.client('sns')
     response = sns.publish(
                 TargetArn=FAILURE_SNS_TOPIC,
@@ -85,6 +84,7 @@ def get_browser():
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--window-size=1920,1080")
     browser = webdriver.Chrome(options=chrome_options)
     return browser
 
