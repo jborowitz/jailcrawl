@@ -445,9 +445,8 @@ def basic_multipage(roster_row, next_type, next_string):
         logger = get_logger(roster_row) # Get a standard logger
         browser = get_browser() # Get a standard browser
         urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
-        if 'omsweb' not in urlAddress:
-            raise Exception("Appears that this site _%s_ is not a public safety web site" % urlAddress)
         logger.info('using basic_multipage crawler for _%s, %s_', roster_row['County'], roster_row['State']) # Log the chosen URL
+        logger.info("Set next_type=_%s_, next_string=_%s_", next_type, next_string)
         logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
 
         browser.get(urlAddress)  
@@ -457,6 +456,7 @@ def basic_multipage(roster_row, next_type, next_string):
         
         store_source = browser.page_source
         pages.append(store_source)
+        logger.info('found page _%s_', len(pages))
 
         finished = False
         
@@ -485,6 +485,7 @@ def basic_multipage(roster_row, next_type, next_string):
                 store_source = browser.page_source
                 if store_source not in pages:
                     pages.append(store_source)
+                    logger.info('found page _%s_', len(pages))
                 else:
                     finished = True
                 
@@ -612,3 +613,74 @@ def multipage_wrapper(func, roster_row=None, next_type=None, next_string=None):
 
     return _multipage_wrapper
 
+def zuercher_crawler(roster_row):
+    try:
+        logger = get_logger(roster_row)
+        urlAddress = roster_row['Working Link']
+        logger.info('Choosing Zuercherportal crawler with url _%s_', urlAddress)
+        if 'zuercherportal' not in urlAddress:
+            raise Exception("Appears that this site _%s_ is not a Zuercherportal URL" % urlAddress)
+        browser = get_browser()
+        page_index = 0
+        #Boilerplate code setting up logger, getting initial URL
+
+        #Given the urlAddress passed to the function we will navigate to the page
+        browser.get(urlAddress) 
+
+        time.sleep(np.random.uniform(5,10,1))
+        
+        lastpage = False
+        pages = []
+        names = []
+        #Get first page
+        store_source = browser.page_source
+        soup = BeautifulSoup(store_source, 'lxml')
+        firstentry = soup.find('td', {'ordered-tag':'name'})
+        names.append(firstentry.text)
+        pages.append(store_source)
+        save_to_s3(store_source, page_index, roster_row)
+        logger.info('Saved page _%s_', page_index)
+           
+        
+        while lastpage == False:
+            time.sleep(np.random.uniform(5,10,1))
+            #Navigate to next page
+            try:
+                nextpage = browser.find_element_by_xpath('//*[@id="primary-container"]/div/div/div/zt-collectionview/div[1]/div/div[2]/div[1]/button[2]')
+                nextpage.click()
+                page_index += 1
+            except:
+                lastpage = True
+            
+            time.sleep(np.random.uniform(5, 10, 1))
+            
+            #Extract the HTML
+            store_source = browser.page_source
+            soup = BeautifulSoup(store_source, 'lxml')
+            save_to_s3(store_source, page_index, roster_row)
+            logger.info('Saved page _%s_', page_index)
+            firstentry = soup.find('td', {'ordered-tag':'name'})
+            
+            
+            if names[-1] == firstentry.text:
+                lastpage = True
+            else:
+                pages.append(store_source)
+                names.append(firstentry.text)
+        ###
+        # End core specific scraping code
+        ##########
+
+        #Close the browser
+        logger.info('complete!')
+        browser.close()
+    except Exception as errorMessage:
+        try:
+            record_error(message=str(errorMessage), roster_row=roster_row, page_number_within_scrape=page_index, browser=browser)
+        except:
+            record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+        browser.close()
+        # Record error in S3 for a general error
+        logger.error('Error: %s', errorMessage)
+        # Log error
+        sys.exit(1)
