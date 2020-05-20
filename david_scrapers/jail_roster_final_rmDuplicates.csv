@@ -916,11 +916,11 @@ Utah,utah,http://www.co.utah.ut.us/Dept/Sheriff/Corrections/InmateActiveResults.
 Utah,wasatch,https://www.wasatch.utah.gov/Sheriff#65537-corrections-and-court-security-jail,Direct,Manual,Day,html,,,Inactive,,,,,
 Utah,weber,http://www.webercountyutah.gov/sheriff/roster/index.php,Direct,Manual,Day,html,,,Inactive,,,,,
 Virginia,"alexandria, city of",https://apps.alexandriava.gov/CrimeReport/,Direct,Manual,Day,html,,,Inactive,,,,,
-Virginia,"bedford, city of",https://virginia.arrests.org/index.php?county=671,Direct,Manual,Day,html,,,Inactive,,,,,
-Virginia,buchanan,http://inmate.co.buchanan.mo.us/NewWorld.InmateInquiry/buchananco?Page=1,Direct,Manual,Day,html,,,Inactive,,,,,
+Virginia,bedford,https://virginia.arrests.org/index.php?county=671,Direct,Manual,Day,html,,,Inactive,,,,,bedford is a city
+Missouri,buchanan,http://inmate.co.buchanan.mo.us/NewWorld.InmateInquiry/buchananco?Page=1,Direct,Manual,Day,html,,,Inactive,,,,,
 Virginia,campbell,https://virginia.arrests.org/index.php?county=672,Direct,Manual,Day,html,,,Inactive,,,,,
-Virginia,caroline,https://co.caroline.va.us/348/Sheriffs-Office,Direct,Manual,Day,html,,,Inactive,,,,,
-Virginia,clarke,https://www.nradc.com/inmate-information,Direct,Manual,Day,html,,,Inactive,,,,,
+Virginia,caroline,https://co.caroline.va.us/348/Sheriffs-Office,Direct,Manual,Day,html,,,Inactive,,,,,no
+Virginia,clarke,https://www.nradc.com/inmate-information,Direct,Manual,Day,html,,,Inactive,,,,,no
 Virginia,"danville, city of",https://p2c.danvilleva.gov/jailinmates.aspx,Direct,Manual,Day,html,,,Inactive,,,,,
 Virginia,"fairfax, city of",https://www.rapsheets.org/virginia/fairfax-jail-search.php,Direct,Manual,Day,html,,,Inactive,,,,,
 Virginia,"franklin, city of",http://wvrjinmates.westernvaregionaljail.org:8085/IML,Direct,Manual,Day,html,,,Inactive,,,,,
@@ -1013,3 +1013,4 @@ Wyoming,lincoln,http://inmateroster.lincolncountysheriff.us/,https://www.lcwy.or
 Wyoming,sheridan,http://www.sheridancounty.com/wp-content/uploads/dlm_uploads/ARRESTS-AND-DETENTION.pdf,Direct,Direct,Day,pdf,,,Inactive,,,,,
 Wyoming,sweet water,https://sweetwater911.org/apps/jailroster/,Direct,Manual,Day,html,,,Inactive,,,,,
 Wyoming,teton,http://www.tetonsheriff.org/detention_inmates.aspx,Direct,Manual,Day,html,,,Inactive,,,,,
+Virginia,buchanan,,Direct,Manual,Day,html,,,Inactive,,,,,
