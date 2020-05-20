@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__ + '_' + runname)
 logger.addHandler(watchtower.CloudWatchLogHandler())
 configs = {line.split('=')[0]:line.split('=')[1].strip() for line in open('/opt/jailscrape/conf.env').readlines()}
 BUCKET = configs['BUCKET']
+from jailscrape.common import save_to_s3, get_browser, get_logger, record_error, summarize_page_counts
 
 scripts_to_run =glob.glob('*.py') 
 logger.info('There are %s scripts to run', len(scripts_to_run))
@@ -51,4 +52,32 @@ newdf = pandas.DataFrame({'script':scripts_to_run})
 df = newdf.merge(df, how='left')
 df['attempted'] = df['exit_code'].notnull()
 
+
 s3.Object(BUCKET,'daily_run_summaries/%s-run_%s_exit_code_summary.csv' % (datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d'),runname)).put(Body=df.to_csv())
+
+page_counts = summarize_page_counts()
+s3.Object(BUCKET,'page_counts/%s-run_%s_page_counts.csv' % (datetime.datetime.strftime(datetime.datetime.now(),'%Y-%m-%d'),runname)).put(Body=page_counts.to_csv())
+
+retries = df[(df['exit_code'] == 1) | (df['timeout'])]
+retry_scripts = [i for i in scripts_to_run if i in df['script'].tolist()]
+
+for n in range(math.ceil(len(retry_scripts) / num_simultaneous_scripts )):
+    process_dict = {}
+    for script in retry_scripts[(n*num_simultaneous_scripts):((n+1)*num_simultaneous_scripts)]:
+        process = subprocess.Popen(['python', script], stdout=subprocess.PIPE)
+        process_dict[script] = process
+        logger.info('added script %s', process)
+    for script, process in process_dict.items():
+        result = {}
+        result['script'] = script
+        logger.info('communicating for script _%s_', script)
+        result['timeout'] = False
+        try:
+            stdout = process.communicate(timeout=600)[0]
+        except subprocess.TimeoutExpired:
+            logger.info('Process _%s_ timed out', script)
+            result['timeout'] = True
+        code = process.wait()
+        result['exit_code'] = code
+        results_list.append(result)
+        print(stdout, code)

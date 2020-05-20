@@ -1,4 +1,5 @@
 from selenium.webdriver.common.keys import Keys
+import pandas
 import json
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
@@ -11,6 +12,7 @@ import logging
 import traceback
 import io
 import ipdb
+import numpy as np
 
 configs = {line.split('=')[0]:line.split('=')[1].strip() for line in open('/opt/jailscrape/conf.env').readlines()}
 BUCKET = configs['BUCKET']
@@ -23,6 +25,10 @@ s3 = boto3.resource( # Do not specificy keys for boto3. What's happening here is
     's3',
     region_name='us-east-1',
 )
+client = boto3.client(
+    's3',
+    region_name='us-east-1',
+    )
 
 def get_logger(roster_row):
     logging.basicConfig(level=logging.INFO)
@@ -94,3 +100,59 @@ def save_pages_array(pages, roster_row):
         save_to_s3(store_source, page_index, roster_row)
         logger.info('Saved page _%s_', page_index)
         page_index += 1
+
+def _try_date_split(date_str):
+    try:
+        out = datetime.strptime(date_str.split('.')[0].split('_')[0], '%Y-%m-%d %H:%M:%S')
+        return out
+    except:
+        return np.nan
+def summarize_page_counts():
+    print(datetime.now())
+    files = get_all_s3_keys('s3://jailcrawl/')
+    print(datetime.now())
+    files = [i for i in files if 'html' in i or 'pdf' in i or 'xml' in i or 'xls' in i]         
+    df = pandas.DataFrame(files)
+    print(df.shape[0])
+    df = df[df[0].apply(lambda x: x[0] != '/')]
+    print(df.shape[0])
+    df = df[df[0].apply(lambda x: 'county' not in x.lower())]
+    print(df.shape[0])
+    df['State'] = df[0].apply(lambda x: x.split('/')[0])
+    df['County'] = df[0].apply(lambda x: x.split('/')[1])
+    df['year'] = df[0].apply(lambda x: x.split('/')[2])
+    df['month'] = df[0].apply(lambda x: x.split('/')[3])
+    df['filestr'] = df[0].apply(lambda x: x.split('/')[4])
+    df['date'] = df['filestr'].apply(_try_date_split)
+    df = df[df['State'] != 'Errors']
+    df = df[df['date'].notnull()]
+    page_counts = df.groupby(['State','County','year','month','day']).size()
+    return page_counts
+
+def get_all_s3_keys(s3_path):
+    """
+    Get a list of all keys in an S3 bucket.
+
+    :param s3_path: Path of S3 dir.
+    """
+    s3 = boto3.client('s3')
+    keys = []
+
+    if not s3_path.startswith('s3://'):
+        s3_path = 's3://' + s3_path
+
+    bucket = s3_path.split('//')[1].split('/')[0]
+    prefix = '/'.join(s3_path.split('//')[1].split('/')[1:])
+
+    kwargs = {'Bucket': bucket, 'Prefix': prefix}
+    while True:
+        resp = s3.list_objects_v2(**kwargs)
+        for obj in resp['Contents']:
+            keys.append(obj['Key'])
+
+        try:
+            kwargs['ContinuationToken'] = resp['NextContinuationToken']
+        except KeyError:
+            break
+
+    return keys
