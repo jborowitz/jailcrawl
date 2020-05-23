@@ -126,6 +126,8 @@ def summarize_page_counts():
     df['date'] = df['filestr'].apply(_try_date_split)
     df = df[df['State'] != 'Errors']
     df = df[df['date'].notnull()]
+    df['month'] = df['date'].apply(lambda x: x.month)
+    df['day'] = df['date'].apply(lambda x: x.day)
     page_counts = df.groupby(['State','County','year','month','day']).size()
     return page_counts
 
