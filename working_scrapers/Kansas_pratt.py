@@ -120,4 +120,4 @@ def main(roster_row):
 
 if __name__ == "__main__":
     roster = pd.read_csv('/opt/jail_roster_final_rmDuplicates.csv',encoding = "utf-8")
-    main(roster.iloc[ROW_INDEX])
+    main(roster[roster['index'] == ROW_INDEX].iloc[0])
