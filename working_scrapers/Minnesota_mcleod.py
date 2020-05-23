@@ -57,4 +57,4 @@ if __name__ == "__main__":
     #Select the index of the roster this script is for:
     #Write the name of the county and state
     roster = pd.read_csv('/opt/jail_roster_final_rmDuplicates.csv',encoding = "utf-8")
-    main(roster.iloc[ROW_INDEX])
+    main(roster[roster['index'] == ROW_INDEX].iloc[0])
