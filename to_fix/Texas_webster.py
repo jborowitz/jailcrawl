@@ -28,11 +28,11 @@ import math
 # to have a large, maximal set here and to bulk-edit files to add to
 # these.
 
-ROW_INDEX = 716 # Change this for each scraper. This references the row
+ROW_INDEX = 905 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
-THIS_STATE = 'north carolina' # Change the current state/county information. 
-THIS_COUNTY = 'union'
+THIS_STATE = 'texas' # Change the current state/county information. 
+THIS_COUNTY = 'webster'
 def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger

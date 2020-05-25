@@ -1,6 +1,6 @@
 import ipdb
 import requests
-from jailscrape.common import save_to_s3, get_browser, get_logger, record_error
+from jailscrape.common import save_to_s3, get_browser, get_logger, record_error, save_pages_array
 import time
 import math
 import re
@@ -674,6 +674,89 @@ def zuercher_crawler(roster_row):
         #Close the browser
         logger.info('complete!')
         browser.close()
+    except Exception as errorMessage:
+        try:
+            record_error(message=str(errorMessage), roster_row=roster_row, page_number_within_scrape=page_index, browser=browser)
+        except:
+            record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+        browser.close()
+        # Record error in S3 for a general error
+        logger.error('Error: %s', errorMessage)
+        # Log error
+        sys.exit(1)
+
+def jailinmates_aspx(roster_row):
+    try:
+        logger = get_logger(roster_row) # Get a standard logger
+        browser = get_browser() # Get a standard browser
+        urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+        logger.info('Choosing jailinmates_aspx crawler with url _%s_', urlAddress)
+        if 'jailinmates' not in urlAddress:
+            raise Exception("Appears that this site _%s_ is not a jailinmates URL" % urlAddress)
+        page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
+
+        ##########
+        # Begin core specific scraping code
+        browser.get(urlAddress) 
+        
+        pages = []
+        names = []
+        
+        #Wait
+        time.sleep(np.random.uniform(5,10,1))
+
+        #Extract the HTML
+        store_source = browser.page_source
+        soup = BeautifulSoup(store_source, 'lxml')
+        table = soup.find('table', {'class':'p2c-datagrid'})
+        cells = table.find_all('td')
+        names.append(cells[5].text)
+        pages.append(store_source)
+        logger.info('added page _%s_', names[0])
+        
+        finished = False
+        
+        while not finished:
+            try:
+                try:
+                    nextpage = browser.find_element_by_link_text(str(len(pages)+1))
+
+                    nextpage.click()
+                    time.sleep(np.random.uniform(5,10,1))
+                    store_source = browser.page_source
+                    soup = BeautifulSoup(store_source, 'lxml')
+                    table = soup.find('table', {'class':'p2c-datagrid'})
+                    cells = table.find_all('td')
+                    name = cells[5].text
+                    if name not in names:
+                        pages.append(store_source)
+                        names.append(name)
+                        logger.info('added page _%s_', name)
+                    else:
+                        finished = True
+                except:
+                    time.sleep(np.random.uniform(5,10,1))
+                    try:
+                        nextpage = browser.find_elements_by_link_text('...')[-1]
+                        nextpage.click()
+                        store_source = browser.page_source
+                        soup = BeautifulSoup(store_source, 'lxml')
+                        table = soup.find('table', {'class':'p2c-datagrid'})
+                        cells = table.find_all('td')
+                        name = cells[5].text
+                        if name not in names:
+                            pages.append(store_source)
+                            names.append(name)
+                            logger.info('added page _%s_', name)
+                        else:
+                            finished = True
+                    except:
+                        finished = True
+                        
+            except:
+                finished = True
+        ## Code to save a page and log appropriately
+        save_pages_array(pages, roster_row)
     except Exception as errorMessage:
         try:
             record_error(message=str(errorMessage), roster_row=roster_row, page_number_within_scrape=page_index, browser=browser)
