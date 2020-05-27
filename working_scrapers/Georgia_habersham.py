@@ -91,7 +91,7 @@ def main(roster_row):
                     store_source = browser.page_source
                     string=str(i)
                     ## Code to save a page and log appropriately
-                    page_index = int(string)
+                    page_index = int(string) -1
                     save_to_s3(store_source, page_index, roster_row)
                     logger.info('Saved page _%s_', page_index) 
                 # If error then webcrawl needs update
@@ -117,7 +117,7 @@ def main(roster_row):
                     store_source = browser.page_source
                     string=str(i)
                     ## Code to save a page and log appropriately
-                    page_index = int(string)
+                    page_index = int(string) - 1
                     save_to_s3(store_source, page_index, roster_row)
                     logger.info('Saved page _%s_', page_index)
                     # If error -> Sometimes the image is not td[27] but td[29]
@@ -128,7 +128,7 @@ def main(roster_row):
                     store_source = browser.page_source
                     string=str(i)
                     ## Code to save a page and log appropriately
-                    page_index = int(string)
+                    page_index = int(string) - 1
                     save_to_s3(store_source, page_index, roster_row)
                     logger.info('Saved page _%s_', page_index)
 
