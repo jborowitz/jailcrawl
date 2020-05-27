@@ -122,49 +122,5 @@ if __name__ == "__main__":
     #Select the index of the roster this script is for:
     #Write the name of the county and state
     roster = pd.read_csv('/opt/jail_roster_final_rmDuplicates.csv',encoding = "utf-8")
-    main(roster[roster['index'] == ROW_INDEX].iloc[0])
+    main(roster.iloc[ROW_INDEX])
 
-
-
-def main(urlAddress):
-    try:
-
-        #Finding the last page
-        soup = BeautifulSoup(store_source, 'lxml')
-        for link in soup.findAll("div", {"id":"resultStats"}):
-            global page
-            page=str(link.text)
-            page=re.sub("Displaying Results 1-50 of ", "", page)
-            page=int(page)
-            page=int(page/50)+(page % 50 > 0)
-
-
-        #Crawling through all the pages
-        string = str(1)
-        for i in range(2,page+1):
-            elem = browser.find_element_by_xpath('//*[@id="next'+str(i)+'"]')
-            elem.click()        
-            time.sleep(np.random.uniform(10,12,1))
-            store_source = browser.page_source
-            string=str(i)
-            file_ = open(root_directory + '/scraper_test_update/' +state+"/"+ state +"_"+ county +"_"+ date_test +"_"+ string+ '.html', 'w', encoding='utf-8')
-            file_.write(store_source)
-            file_.close()
-            #s3.Object('jailcrawl',state + '/' + county + '/' + str(datetime.now().year) + '/' + datetime.now().strftime("%B")+'/'+ date_collected + "_"+ string+ '.html').put(Body=store_source)
-        
-        
-        #Close the browser
-        browser.close()
-    except Exception as errorMessage:
-        #Post error to firebase server
-        browser.close()
-        #date_collected = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        #data = {'Message':str(errorMessage)}
-        #firebase.put('/ErrorLogs/'+locationInUse+'/',date_collected,data)
-        pass
-    
-        
-
-if __name__ == "__main__":
-    roster = pd.read_csv('/opt/jail_roster_final_rmDuplicates.csv',encoding = "utf-8")
-    main(roster[roster['index'] == ROW_INDEX].iloc[0])

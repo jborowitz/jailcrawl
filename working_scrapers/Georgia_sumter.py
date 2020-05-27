@@ -34,11 +34,11 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 
 
-ROW_INDEX = 122 # Change this for each scraper. This references the row
+ROW_INDEX = 151 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
 THIS_STATE = 'georgia' # Change the current state/county information. 
-THIS_COUNTY = 'fayette'
+THIS_COUNTY = 'sumter'
 def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
@@ -74,7 +74,7 @@ def main(roster_row):
         #Extract the HTML#
         store_source = browser.page_source
                 
-        #Select institution (FAYETTE COUNTY JAIL)
+        #Select institution (SUMTER COUNTY JAIL)
         soup = BeautifulSoup(store_source, 'lxml')
         nameList = soup.findAll("select", {"name":"vCurrentInstitution"})
         for i in nameList:
@@ -85,7 +85,7 @@ def main(roster_row):
             nameList= re.sub('>', " ", nameList)
             nameList = nameList.split("<option value=")
 
-        regex = re.compile("^FAYETTE COUNTY JAIL")
+        regex = re.compile("^SUMTER COUNTY JAIL")
         list_index = [i for i, item in enumerate(nameList) if re.search(regex, item)]
         list_index = int(list_index[0])
 
