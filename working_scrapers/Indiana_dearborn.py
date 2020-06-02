@@ -34,7 +34,7 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 
 
-ROW_INDEX = 195 # Change this for each scraper. This references the row
+ROW_INDEX = 196 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
 THIS_STATE = 'indiana' # Change the current state/county information. 
@@ -134,7 +134,3 @@ if __name__ == "__main__":
     roster = pd.read_csv('/opt/jail_roster_final_rmDuplicates.csv',encoding = "utf-8")
     main(roster[roster['index'] == ROW_INDEX].iloc[0])
 
-
-def main(urlAddress):
-    roster = pd.read_csv('/opt/jail_roster_final_rmDuplicates.csv',encoding = "utf-8")
-    main(roster[roster['index'] == ROW_INDEX].iloc[0])

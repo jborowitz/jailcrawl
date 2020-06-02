@@ -33,12 +33,11 @@ import selenium as sm
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 
-
-ROW_INDEX = 224 # Change this for each scraper. This references the row
+ROW_INDEX = 214 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
 THIS_STATE = 'indiana' # Change the current state/county information. 
-THIS_COUNTY = 'vanderburgh'
+THIS_COUNTY = 'newton'
 def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
@@ -58,44 +57,72 @@ def main(roster_row):
         if roster_row['State'].lower() != THIS_STATE or roster_row['County'].lower() != THIS_COUNTY:
             raise Exception("Expected county definition info from _%s, %s_, but found info: _%s_" % (THIS_COUNTY, THIS_STATE, roster_row))
        
-        # Open Browser
+        #Given the urlAddress passed to the function we will navigate to the page
         browser.get(urlAddress)
         time.sleep(np.random.uniform(7,10,1))
         
-        # Click view all
-        elem = browser.find_element_by_xpath('//*[@id="resultAlpha"]/li[1]')
-        elem.click()    
-        time.sleep(np.random.uniform(1,3,1))
-
         #Extract the HTML#
         store_source = browser.page_source
         
-        ## Code to save a page and log appropriately
+        ## Code to save the first page and log appropriately
         save_to_s3(store_source, page_index, roster_row)
         logger.info('Saved page _%s_', page_index)
         
         #Finding the last page
         soup = BeautifulSoup(store_source, 'lxml')
-        for link in soup.findAll("div", {"id":"resultStats"}):
-            global page
+        page=0
+        for link in soup.findAll("div", {"class":"loca-search-head text-center"}):
             page=str(link.text)
-            page=re.sub("Displaying Results 1-50 of ", "", page)
-            page=int(page)
-            page=int(page/50)+(page % 50 > 0)
-
+            page=re.sub(' Results for "_"', "", page)
+            page=int(page)/10
+            page=math.ceil(page)
 
         #Crawling through all the pages
         string = str(1)
         for i in range(2,page+1):
-            elem = browser.find_element_by_xpath('//*[@id="next'+str(i)+'"]')
-            elem.click()        
-            time.sleep(np.random.uniform(10,12,1))
-            store_source = browser.page_source
-            string=str(i)
-            ## Code to save a page and log appropriately
-            page_index = int(string)-1
-            save_to_s3(store_source, page_index, roster_row)
-            logger.info('Saved page _%s_', page_index)
+            if i>30 :
+                print("Exceeds 300 inmates")
+
+            elif i==2:
+                elem = browser.find_element_by_xpath('/html/body/div/div/div/div[2]/div[3]/div[12]/ul/li[3]/a')
+                elem.click()        
+                time.sleep(np.random.uniform(3,5,1))
+                store_source = browser.page_source
+                string=str(i)
+                ## Code to save the page and log appropriately
+                page_index=int(string)-1
+                save_to_s3(store_source, page_index, roster_row)
+                logger.info('Saved page _%s_', page_index)
+            elif i==3:
+                elem = browser.find_element_by_xpath('/html/body/div/div/div/div[2]/div[3]/div[12]/ul/li[4]/a')
+                elem.click()        
+                time.sleep(np.random.uniform(3,5,1))
+                store_source = browser.page_source
+                string=str(i)
+                ## Code to save the page and log appropriately
+                page_index=int(string)-1
+                save_to_s3(store_source, page_index, roster_row)
+                logger.info('Saved page _%s_', page_index)
+            elif i==4:
+                elem = browser.find_element_by_xpath('/html/body/div/div/div/div[2]/div[3]/div[12]/ul/li[5]/a')
+                elem.click()        
+                time.sleep(np.random.uniform(3,5,1))
+                store_source = browser.page_source
+                string=str(i)
+                ## Code to save the page and log appropriately
+                page_index=int(string)-1
+                save_to_s3(store_source, page_index, roster_row)
+                logger.info('Saved page _%s_', page_index)
+            elif i>=5:
+                elem = browser.find_element_by_xpath('/html/body/div/div/div/div[2]/div[3]/div[12]/ul/li[6]/a')
+                elem.click()        
+                time.sleep(np.random.uniform(3,5,1))
+                store_source = browser.page_source
+                string=str(i)
+                ## Code to save the page and log appropriately
+                page_index=int(string)-1
+                save_to_s3(store_source, page_index, roster_row)
+                logger.info('Saved page _%s_', page_index)
         
         # End core specific scraping code
         

@@ -34,11 +34,11 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 
 
-ROW_INDEX = 257 # Change this for each scraper. This references the row
+ROW_INDEX = 125 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
-THIS_STATE = 'kansas' # Change the current state/county information. 
-THIS_COUNTY = 'finney'
+THIS_STATE = 'georgia' # Change the current state/county information. 
+THIS_COUNTY = 'gilmer'
 def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
@@ -47,18 +47,69 @@ def main(roster_row):
         # These aren't initialized here since in the save_single_page
         # case, they can be done in the called function
         
-        #browser = get_browser() # Get a standard browser
-        #urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
-        #page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
-        #logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
+        browser = get_browser() # Get a standard browser
+        urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+        page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
+        logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
 
         ####################################
         
         # Begin core specific scraping code
         if roster_row['State'].lower() != THIS_STATE or roster_row['County'].lower() != THIS_COUNTY:
             raise Exception("Expected county definition info from _%s, %s_, but found info: _%s_" % (THIS_COUNTY, THIS_STATE, roster_row))
-        crawlers.basic_multipage(roster_row, next_type='ptext', next_string='»')
+       
+        # Open Browser
+        browser.get(urlAddress)
+        time.sleep(np.random.uniform(7,10,1))
         
+        #Extract the HTML#
+        store_source = browser.page_source
+
+        ## Code to save a page and log appropriately
+        save_to_s3(store_source, page_index, roster_row)
+        logger.info('Saved page _%s_', page_index)
+        
+        #Finding the last page
+        page=0
+        soup = BeautifulSoup(store_source, 'lxml')
+        try:
+            x=soup.findAll("span", {"class":"k-pager-info k-label"})
+            x=list(x)
+            x=x[1]
+            page=str(x)
+            page=page[int(page.index("of"))+3:page.index(" items</span>")]
+            page=int(page)
+            page=int(page/10)+(page % 10 > 0)
+        except ValueError as errorMessage:
+            page=0
+            print("Please review script for this county.")
+            try:
+                browser.close()
+                record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+            except:
+                record_error(message=str(errorMessage), roster_row=roster_row)
+                
+            # Record error in S3 for a general error
+            logger.error('Error: %s', errorMessage)
+            # Log error
+            sys.exit(1)
+
+        #Crawling through all the pages
+        string = str(1)
+        for i in range(2,page+1):
+            elem = browser.find_element_by_xpath('//*[@id="allInmatesGrid"]/div[1]/a[3]/span')
+            elem.click()        
+            time.sleep(np.random.uniform(5,7,1))
+            store_source = browser.page_source
+            string = str(i)
+            ## Code to save a page and log appropriately
+            page_index = int(string) - 1
+            save_to_s3(store_source, page_index, roster_row)
+            logger.info('Saved page _%s_', page_index)
+
+        # End core specific scraping code
+        
+        ####################################
 
         #Close the browser
         logger.info('complete!')

@@ -28,11 +28,11 @@ import math
 # to have a large, maximal set here and to bulk-edit files to add to
 # these.
 
-ROW_INDEX = 216 # Change this for each scraper. This references the row
+ROW_INDEX = 315 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
-THIS_STATE = 'indiana' # Change the current state/county information. 
-THIS_COUNTY = 'pulaski'
+THIS_STATE = 'kentucky' # Change the current state/county information. 
+THIS_COUNTY = 'larue'
 def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
@@ -40,19 +40,13 @@ def main(roster_row):
         # Here are standard variable values/how to initialize them.
         # These aren't initialized here since in the save_single_page
         # case, they can be done in the called function
-        #browser = get_browser() # Get a standard browser
-        #urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
-        #page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
-        #logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
 
         ##########
         # Begin core specific scraping code
         if roster_row['State'].lower() != THIS_STATE or roster_row['County'].lower() != THIS_COUNTY:
             raise Exception("Expected county definition info from _%s, %s_, but found info: _%s_" % (THIS_COUNTY, THIS_STATE, roster_row))
-        crawlers.public_safety_web_crawler(roster_row) # try to call a known crawler if possible
-        ## Code to save a page and log appropriately
-        #save_to_s3(store_source, page_index, roster_row)
-        #logger.info('Saved page _%s_', page_index)
+        crawlers.omsweb_crawler(roster_row) # try to call a known crawler if possible
+
         # End core specific scraping code
         ##########
 
@@ -78,4 +72,3 @@ if __name__ == "__main__":
     #Write the name of the county and state
     roster = pd.read_csv('/opt/jail_roster_final_rmDuplicates.csv',encoding = "utf-8")
     main(roster[roster['index'] == ROW_INDEX].iloc[0])
-

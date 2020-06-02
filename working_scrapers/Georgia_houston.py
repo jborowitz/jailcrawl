@@ -1,7 +1,7 @@
 #!/usr/bin/python
 '''
-This is an template script
-
+This is a template script
+MG
 '''
 
 from urllib.request import urlopen, Request
@@ -24,15 +24,21 @@ import watchtower
 from bs4 import BeautifulSoup
 import re
 import math
-# NOTE: These are imports. They ideally don't change very often. It's OK
-# to have a large, maximal set here and to bulk-edit files to add to
-# these.
 
-ROW_INDEX = 216 # Change this for each scraper. This references the row
+# NOTE: These are imports. They ideally don't change very often. 
+# It's OK to have a large, maximal set here and to bulk-edit files to add to these.
+
+# MG - Extra imports
+import selenium as sm
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+
+
+ROW_INDEX = 133 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
-THIS_STATE = 'indiana' # Change the current state/county information. 
-THIS_COUNTY = 'pulaski'
+THIS_STATE = 'georgia' # Change the current state/county information. 
+THIS_COUNTY = 'houston'
 def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
@@ -40,21 +46,48 @@ def main(roster_row):
         # Here are standard variable values/how to initialize them.
         # These aren't initialized here since in the save_single_page
         # case, they can be done in the called function
-        #browser = get_browser() # Get a standard browser
-        #urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
-        #page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
-        #logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
+        
+        browser = get_browser() # Get a standard browser
+        urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
+        page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
+        logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
 
-        ##########
+        ####################################
+        
         # Begin core specific scraping code
         if roster_row['State'].lower() != THIS_STATE or roster_row['County'].lower() != THIS_COUNTY:
             raise Exception("Expected county definition info from _%s, %s_, but found info: _%s_" % (THIS_COUNTY, THIS_STATE, roster_row))
-        crawlers.public_safety_web_crawler(roster_row) # try to call a known crawler if possible
+       
+        # Open Browser
+        browser.get(urlAddress)
+        time.sleep(np.random.uniform(7,10,1))
+        
+        #Click the text box to display more inmates
+        elem = browser.find_element_by_xpath('//*[@id="mrc_main_table"]/tr[1]/th/input[4]')
+        elem.click() 
+        time.sleep(np.random.uniform(2,4,1))
+        
+        #Entering text box to display 25000 inmates
+        elem.clear()
+        time.sleep(np.random.uniform(1,2,1))
+        elem.send_keys("25000")
+        time.sleep(np.random.uniform(1,2,1))
+        
+        #Click filter
+        elem = browser.find_element_by_xpath('//*[@id="mrc_main_table"]/tr[1]/th/input[1]')
+        elem.click() 
+        time.sleep(np.random.uniform(5,7,1))
+    
+        # Extract the HTML
+        store_source = browser.page_source
+        
         ## Code to save a page and log appropriately
-        #save_to_s3(store_source, page_index, roster_row)
-        #logger.info('Saved page _%s_', page_index)
+        save_to_s3(store_source, page_index, roster_row)
+        logger.info('Saved page _%s_', page_index)
+        
         # End core specific scraping code
-        ##########
+        
+        ####################################
 
         #Close the browser
         logger.info('complete!')

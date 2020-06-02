@@ -34,11 +34,11 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 
 
-ROW_INDEX = 224 # Change this for each scraper. This references the row
+ROW_INDEX = 144 # Change this for each scraper. This references the row
 # of the main jailcrawl spreadsheet. This index will be used to look up
 # the URL as well as state/county info
-THIS_STATE = 'indiana' # Change the current state/county information. 
-THIS_COUNTY = 'vanderburgh'
+THIS_STATE = 'georgia' # Change the current state/county information. 
+THIS_COUNTY = 'madison'
 def main(roster_row):
     try:
         logger = get_logger(roster_row) # Get a standard logger
@@ -62,41 +62,76 @@ def main(roster_row):
         browser.get(urlAddress)
         time.sleep(np.random.uniform(7,10,1))
         
-        # Click view all
-        elem = browser.find_element_by_xpath('//*[@id="resultAlpha"]/li[1]')
-        elem.click()    
-        time.sleep(np.random.uniform(1,3,1))
-
         #Extract the HTML#
         store_source = browser.page_source
-        
-        ## Code to save a page and log appropriately
+
+        ## Code to save the first page and log appropriately
         save_to_s3(store_source, page_index, roster_row)
         logger.info('Saved page _%s_', page_index)
         
-        #Finding the last page
+        # Finding the last page
         soup = BeautifulSoup(store_source, 'lxml')
-        for link in soup.findAll("div", {"id":"resultStats"}):
-            global page
+        page=0
+        for link in soup.findAll("td", {"style":"white-space:nowrap;"}):
             page=str(link.text)
-            page=re.sub("Displaying Results 1-50 of ", "", page)
+            page=re.sub("Page 1 of ", "", page)
+            page=page[:page.index(" ")]
             page=int(page)
-            page=int(page/50)+(page % 50 > 0)
-
 
         #Crawling through all the pages
         string = str(1)
-        for i in range(2,page+1):
-            elem = browser.find_element_by_xpath('//*[@id="next'+str(i)+'"]')
-            elem.click()        
-            time.sleep(np.random.uniform(10,12,1))
-            store_source = browser.page_source
-            string=str(i)
-            ## Code to save a page and log appropriately
-            page_index = int(string)-1
-            save_to_s3(store_source, page_index, roster_row)
-            logger.info('Saved page _%s_', page_index)
-        
+        if page ==0: 
+            print("No inmate")
+        if page <=10:
+            for i in range(2,page+1):
+                try:
+                    elem = browser.find_element_by_xpath('//*[@id="Content_MainContent_ASPxGridView3_DXPagerTop"]/tbody/tr/td/table/tbody/tr/td['+str((i*2)+3)+']')
+                    elem.click()        
+                    time.sleep(np.random.uniform(5,7,1))
+                    store_source = browser.page_source
+                    string=str(i)
+                    ## Code to save a page and log appropriately
+                    page_index = int(string) - 1
+                    save_to_s3(store_source, page_index, roster_row)
+                    logger.info('Saved page _%s_', page_index) 
+                # If error then webcrawl needs update
+                except NoSuchElementException as errorMessage:
+                    print("Please review script for this county.")
+                    try:
+                        browser.close()
+                        record_error(message=str(errorMessage), roster_row=roster_row, browser=browser)
+                    except:
+                        record_error(message=str(errorMessage), roster_row=roster_row)
+                
+                    # Record error in S3 for a general error
+                    logger.error('Error: %s', errorMessage)
+                    # Log error
+                    sys.exit(1)   
+                    
+        elif page >10:
+            for i in range(2,page+1):
+                try:
+                    elem = browser.find_element_by_xpath('//*[@id="Content_MainContent_ASPxGridView3_DXPagerTop"]/tbody/tr/td/table/tbody/tr/td[27]/img')
+                    elem.click()        
+                    time.sleep(np.random.uniform(5,7,1))
+                    store_source = browser.page_source
+                    string=str(i)
+                    ## Code to save a page and log appropriately
+                    page_index = int(string) - 1
+                    save_to_s3(store_source, page_index, roster_row)
+                    logger.info('Saved page _%s_', page_index)
+                    # If error -> Sometimes the image is not td[27] but td[29]
+                except NoSuchElementException:
+                    elem = browser.find_element_by_xpath('//*[@id="Content_MainContent_ASPxGridView3_DXPagerTop"]/tbody/tr/td/table/tbody/tr/td[29]/img')
+                    elem.click()        
+                    time.sleep(np.random.uniform(5,7,1))
+                    store_source = browser.page_source
+                    string=str(i)
+                    ## Code to save a page and log appropriately
+                    page_index = int(string) - 1
+                    save_to_s3(store_source, page_index, roster_row)
+                    logger.info('Saved page _%s_', page_index)
+
         # End core specific scraping code
         
         ####################################
