@@ -62,21 +62,57 @@ def main(roster_row):
         browser.get(urlAddress)
         time.sleep(np.random.uniform(7,10,1))
         
-        # Clicking to show all options
-        elem = browser.find_element_by_xpath('//*[@id="pager_center"]/table/tbody/tr/td[5]/select')
-        elem.click()      
-        time.sleep(np.random.uniform(1,2,1))
-        
-        elem = browser.find_element_by_xpath('//*[@id="pager_center"]/table/tbody/tr/td[5]/select/option[5]')
-        elem.click()      
-        time.sleep(np.random.uniform(1,2,1))
-        
-        elem = browser.find_element_by_xpath('//*[@id="refresh_tblII"]/div/span')
-        elem.click()      
-        time.sleep(np.random.uniform(1,2,1))
-        
-        #Extract the HTML#
+        num_rows_found = 1000000
+        rownum = 1
         store_source = browser.page_source
+        row_sources = []
+        row_texts = []
+        while rownum < num_rows_found:
+            # Clicking to show all options. The page actually is buggy.
+            # If you click on detail, and click "back", then there is
+            # only 10 rows. And clicking "All" again doesn't help. YOu
+            # have to click a different number of rows first...
+            elem = browser.find_element_by_xpath('//*[@id="pager_center"]/table/tbody/tr/td[5]/select')
+            elem.click()      
+            time.sleep(np.random.uniform(1,2,1))
+            
+            elem = browser.find_element_by_xpath('//*[@id="pager_center"]/table/tbody/tr/td[5]/select/option[3]')
+            elem.click()      
+            time.sleep(np.random.uniform(1,2,1))
+
+            elem = browser.find_element_by_xpath('//*[@id="pager_center"]/table/tbody/tr/td[5]/select')
+            elem.click()      
+            time.sleep(np.random.uniform(1,2,1))
+            
+            elem = browser.find_element_by_xpath('//*[@id="pager_center"]/table/tbody/tr/td[5]/select/option[5]')
+            elem.click()      
+            time.sleep(np.random.uniform(1,2,1))
+            
+            elem = browser.find_element_by_xpath('//*[@id="refresh_tblII"]/div/span')
+            elem.click()      
+            time.sleep(np.random.uniform(1,2,1))
+            
+            #initial_rows = browser.find_elements_by_xpath('/html/body/form/table/tbody/tr[2]/td/table/tbody/tr/td[2]/div/div[2]/div[2]/div/div[3]/div[3]/div/table/tbody/tr') 
+            #Extract the HTML#
+            rows = browser.find_elements_by_xpath('/html/body/form/table/tbody/tr[2]/td/table/tbody/tr/td[2]/div/div[2]/div[2]/div/div[3]/div[3]/div/table/tbody/tr') 
+            logger.info('found %s rows on parse', len(rows))
+            if num_rows_found == 1000000:
+                num_rows_found = len(rows)
+                logger.info('Found _%s_ total records', num_rows_found)
+
+            row_texts.append(rows[rownum].text)
+            elem = rows[rownum].click()
+            time.sleep(np.random.uniform(1,5,1))
+            row_sources.append(browser.page_source)
+            logger.info('Logged id page _%s_', len(row_sources))
+            browser.execute_script("window.history.go(-1)")
+            time.sleep(np.random.uniform(1,5,1))
+            rownum += 1
+        save_to_s3(store_source, "MAINPAGE", roster_row)
+        logger.info('Saved page _%s_', page_index)
+        save_pages_array(row_sources, roster_row)
+
+
 
         ## Code to save a page and log appropriately
         save_to_s3(store_source, page_index, roster_row)
