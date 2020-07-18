@@ -47,7 +47,7 @@ def main(roster_row):
         # These aren't initialized here since in the save_single_page
         # case, they can be done in the called function
         
-        browser = get_browser() # Get a standard browser
+        #browser = get_browser() # Get a standard browser
         urlAddress = roster_row['Working Link'] # Set the main URL from the spreadsheet
         page_index = 0 # Set an initial value of "page_index", which we will use to separate output pages
         logger.info('Set working link to _%s_', urlAddress) # Log the chosen URL
@@ -59,14 +59,16 @@ def main(roster_row):
             raise Exception("Expected county definition info from _%s, %s_, but found info: _%s_" % (THIS_COUNTY, THIS_STATE, roster_row))
        
         # Open Browser
-        browser.get(urlAddress)
+        #browser.get(urlAddress)
+        res = requests.get(urlAddress)
         time.sleep(np.random.uniform(7,10,1))        
+        res.raise_for_status()
         
         #Extract the HTML#
-        store_source = browser.page_source
+        store_source = res.content
 
        #Pulling the specific link for the current inmate pdf and convert it to text
-        soup = BeautifulSoup(store_source, 'lxml')
+        soup = BeautifulSoup(res.content, 'lxml')
         
         # Pulling all the hrefs
         website_link=[]

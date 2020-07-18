@@ -194,7 +194,7 @@ def roster_php(roster_row, num_per_page=20):
         suffix = '?grp={}'
         browser.get(urlAddress) 
         #Use elements like below to find xpath keys and click through 
-        time.sleep(np.random.uniform(5,10,1))
+        time.sleep(np.random.uniform(300,400,1))
         store_source = browser.page_source
         soup = BeautifulSoup(store_source, 'lxml')
         try:

@@ -64,11 +64,12 @@ def main(roster_row):
             
                                                    
             rows = browser.find_elements_by_xpath('/html/body/div/div[2]/div/div[2]/div[2]/div/div/div[2]/div/div/table/tbody/tr')
+            num_rows_found = len(rows)
             logger.info('Found %s profiles', len(rows))
             try:
                 link = browser.find_element_by_xpath('/html/body/div/div[2]/div/div[2]/div[2]/div/div/div[2]/div/div/table/tbody/tr[%s]/td[1]/a' % rownum)
             except Exception as e:
-                if abs(rownum - num_rows_found) <= 1:
+                if abs(len(row_sources) - num_rows_found) == 0:
                     break
                 else:
                     raise(e)
