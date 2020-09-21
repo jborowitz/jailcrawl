@@ -23,3 +23,11 @@ if [ "$1" = 'run_all' ]; then
     exit 0
 fi
 
+
+if [ "$1" = 'run_iowa' ]; then
+    export PYTHONPATH="${PYTHONPATH}:/opt/scraper_common/" && \
+        cd /opt/ && \
+	python ./jailscrape/iowa_court.py
+    exit 0
+fi
+

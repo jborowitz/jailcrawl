@@ -823,10 +823,10 @@ Oregon,washington,https://www.co.washington.or.us/Sheriff/Jail/who-is-in-custody
 Oregon,yamhill,https://www.co.yamhill.or.us/jailinmate/inmates.php,Direct,Manual,Day,html,,,Inactive,,,,,,821
 Pennsylvania,bradford,http://smartweb.bradfordsheriff.org/smartwebclient/Jail.aspx,Antoine,,Inactive,html,DMJ,,,,,,,,822
 Pennsylvania,lycoming,http://www.lyco.org/Departments/Prison/InmateSearch.aspx,Direct,Manual,Day,html,DMJ,,Inactive,,,,,,823
-Pennsylvania,potter,http://pottercountysheriff.org/ROSTER/PrisonerAndTheirOffensesReport.pdf,Antoine,,Inactive,,,,,,,,,,824
+Pennsylvania,potter,http://public.pottercountysheriff.org/pottersheriff/PrisonerAndTheirOffensesReport.pdf,Antoine,,Inactive,,,,,,,,,,824
 Pennsylvania,westmoreland,http://apps.co.westmoreland.pa.us/prison/PrisonInmates/Prison_inmates.asp,Direct,Manual,Day,html,,,Inactive,,,,,,825
 Pennsylvania,bucks,http://www.buckscounty.org/government/Corrections,Direct,Manual,Day,html,,,Inactive,,,,,,826
-Pennsylvania,cameron,https://www.inmateaid.com/prisons/cameron-county-pa-jail,Direct,Manual,Day,html,Alex,,Inactive,,,,,,827
+Pennsylvania,cameron,https://www.inmateaid.com/inmate-locator/cameron-county-pa-jail.amp,Direct,Manual,Day,html,Alex,,Inactive,,,,,,827
 Pennsylvania,chester,https://www.cor.pa.gov/Inmates/Pages/Inmate-Locator.aspx,Direct,Manual,Day,html,,,Inactive,,,,,,828
 Pennsylvania,clarion,http://www.co.clarion.pa.us/government/clarion-county-sheriff/40-web-site-pages/sheriff-public/149-warrant-list.html,Direct,Manual,Day,html,,,Inactive,,,,,,829
 Pennsylvania,clinton,http://grouse.clintoncountypa.com:1080/CCCF/housing.pdf,Direct,Direct,Day,pdf,,,Inactive,,,,,,830
@@ -843,7 +843,6 @@ Pennsylvania,northampton,https://www.northamptoncounty.org/CORECTNS/Pages/Inmate
 Pennsylvania,perry,https://www.inmateaid.com/prisons/perry-county-pa-prison,Direct,Manual,Day,html,,,Inactive,,,,,,841
 Pennsylvania,philadelphia,http://www.phila.gov/prisons/inmatelocator/inmatelocator.aspx,Direct,Manual,Day,html,,,Inactive,,,,,,842
 Pennsylvania,pike,http://inmatelocator.cor.pa.gov/#/,Direct,Manual,Day,html,,,Inactive,,,,,,843
-Pennsylvania,potter,http://pottercountysheriff.org/ROSTER/PrisonerAndTheirOffensesReport.pdf,Direct,Direct,Day,pdf,,,Inactive,,,,,,844
 Pennsylvania,schuylkill,http://www.co.schuylkill.pa.us/Offices/Sheriff/index.asp,Direct,Manual,Day,html,,,Inactive,,,,,,845
 Pennsylvania,warren,http://inmatelocator.cor.pa.gov/#/,Direct,Manual,Day,html,,,Inactive,,,,,,846
 Pennsylvania,washington,http://www.co.washington.pa.us/116/Commitment-Report,Direct,Manual,Day,html,,,Inactive,,,,,,847

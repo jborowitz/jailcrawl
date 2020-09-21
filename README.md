@@ -21,11 +21,11 @@ docker build -t jailcrawl .
 ```
  4. Run the container. There are two modes to run. To run a single file, do `run_one` with a pointer to the specific file you'd like to run:
  ```
-docker run -i -t  test run_one ./Arkansas_marion.py
+docker run -i -t  jailcrawl run_one ./Arkansas_marion.py
  ```
 To run all files, do:
 ```
-docker run -i -t  test run_all
+docker run -i -t  jailcrawl run_all
  ```
 # Code format
 

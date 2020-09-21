@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3.7.7-stretch
 
 # install google chrome
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
@@ -18,13 +18,15 @@ ENV DISPLAY=:99
 RUN pip install --upgrade pip
 
 # install selenium
-RUN pip install selenium
+RUN pip install selenium fake-useragent
 
-RUN pip install pandas numpy boto3 boto joblib requests ipdb awscli watchtower beautifulsoup4 lxml
+RUN pip install pandas numpy boto3 boto joblib requests ipdb awscli watchtower beautifulsoup4 lxml html5lib
 
 # Begin Jeff work
 ADD david_scrapers/jail_roster_final_rmDuplicates.csv /opt/
 ADD working_scrapers/ /opt/
+
+ADD dbc_api_python3/deathbycaptcha.py /opt/
 
 ADD jailscrape /opt/jailscrape
 ADD conf.env /opt/jailscrape/

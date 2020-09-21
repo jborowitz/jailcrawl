@@ -8,6 +8,7 @@ import uuid
 import pandas
 import boto3
 import datetime
+import time
 
 runname = str(uuid.uuid4())[0:8]
 logging.basicConfig(level=logging.INFO)
@@ -19,13 +20,14 @@ from jailscrape.common import save_to_s3, get_browser, get_logger, record_error,
 
 scripts_to_run =glob.glob('*.py') 
 logger.info('There are %s scripts to run', len(scripts_to_run))
-num_simultaneous_scripts = 20
+num_simultaneous_scripts = 15
 results_list = []
 #for n in [0,1]:
 for n in range(math.ceil(len(scripts_to_run) / num_simultaneous_scripts )):
     process_dict = {}
     for script in scripts_to_run[(n*num_simultaneous_scripts):((n+1)*num_simultaneous_scripts)]:
         process = subprocess.Popen(['python', script], stdout=subprocess.PIPE)
+        time.sleep(1)
         process_dict[script] = process
         logger.info('added script %s', process)
     for script, process in process_dict.items():
@@ -33,6 +35,9 @@ for n in range(math.ceil(len(scripts_to_run) / num_simultaneous_scripts )):
         result['script'] = script
         logger.info('communicating for script _%s_', script)
         result['timeout'] = False
+        timeout = 600
+        if script in ["Iowa_woodbury.py", "Iowa_dubuque.py", "Iowa_scott.py"]:
+            timeout = 6000
         try:
             stdout = process.communicate(timeout=600)[0]
         except subprocess.TimeoutExpired:
