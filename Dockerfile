@@ -24,6 +24,8 @@ RUN pip install pandas numpy boto3 boto joblib requests ipdb awscli watchtower b
 
 # Begin Jeff work
 ADD david_scrapers/jail_roster_final_rmDuplicates.csv /opt/
+ADD david_scrapers/dubuque_dockets.csv /opt/
+
 ADD working_scrapers/ /opt/
 
 ADD dbc_api_python3/deathbycaptcha.py /opt/
