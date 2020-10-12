@@ -36,7 +36,6 @@ s3 = boto3.resource( # Do not specificy keys for boto3. What's happening here is
 # NOTE: These are imports. They ideally don't change very often. It's OK
 # to have a large, maximal set here and to bulk-edit files to add to
 # these.
-dockets = pd.read_csv('/opt/dubuque_dockets.csv',encoding = "utf-8")
 logger = get_logger()
 configs = {line.split('=')[0]:line.split('=')[1].strip() for line in open('/opt/jailscrape/conf.env').readlines()}
 BUCKET = configs['BUCKET']
@@ -62,7 +61,7 @@ def solve_iowa_captcha(site_key_stripped):
             print ("CAPTCHA %s solved: %s" % (captcha["captcha"], captcha["text"]))
         else:
             print('Captcha failed')
-            raise Exception("Failed Captcha")
+            raise KeyError("Failed Captcha")
         print('Found balance: %s' % balance)
         # dbc_params['token_params'] = json.dumps(dbc_page_params)
     except deathbycaptcha.AccessDeniedException as e:
@@ -85,7 +84,7 @@ def save_to_s3(df, docket_row):
         if e.response['Error']['Code'] == "404":
             s3.Object(BUCKET,filename).put(Body=df.to_csv())
             logger.info('Saved file: _%s_', filename)
-def docket_already_crawled(docket_row, days_ago=2):
+def docket_already_crawled(docket_row, days_ago=30):
     for i in range(days_ago + 1):
         filename = get_s3_filename(docket_row, days_ago=i)
         try:
@@ -94,10 +93,12 @@ def docket_already_crawled(docket_row, days_ago=2):
             return True
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == "404":
-                logger.info('File not found, continuing crawl: _%s_', filename)
-                return False
+                continue
+
+    logger.info('File not found for %s, continuing crawl: _%s_', docket_row['docket'],filename)
+    return False
 browser = get_browser() # Get a standard browser
-def crawl_history(firstname, lastname, docket):
+def crawl_history(firstname, lastname, docket, countyname):
         # Here are standard variable values/how to initialize them.
         # These aren't initialized here since in the save_single_page
         # case, they can be done in the called function
@@ -107,8 +108,9 @@ def crawl_history(firstname, lastname, docket):
 
     ##########
     # Begin core specific scraping code
+    logger.info('going to homepage')
     browser.get(urlAddress) 
-    print('waiting to click homepage')
+    logger.info('waiting to click homepage')
     time.sleep(np.random.uniform(2,4,1))
 
     search = browser.find_element_by_partial_link_text('Start A')
@@ -141,7 +143,7 @@ def crawl_history(firstname, lastname, docket):
             print('Trying to solve captcha, try %s' % i)
             captcha = solve_iowa_captcha(site_key_stripped)
             break
-        except:
+        except KeyError:
             continue
     # import ipdb; ipdb.set_trace()
     # BRowser.switch_to_frame('recaptcha challenge')
@@ -170,7 +172,12 @@ def crawl_history(firstname, lastname, docket):
         matching_link = browser.find_element_by_partial_link_text(docket)
     except:
         logger.error('Failed to find docket %s', docket)
-        return 
+        try:
+            df = pandas.read_html(store_source4)[0]
+            save_to_s3(df, {'county': countyname, 'docket': docket})
+            return 
+        except:
+            import ipdb; ipdb.set_trace()
     case_text = matching_link.text
     print('Found case id %s' % case_text)
     matching_link.click()
@@ -213,7 +220,7 @@ def crawl_history(firstname, lastname, docket):
     df['docket'] = docket
     df['case'] = case_text
     df['crawl_date'] = '%s' % datetime.datetime.now()
-    df['county'] = 'dubuque'
+    df['county'] = countyname
 
     # tab = soup5.find_all('table')[0]  
     # # /html/body/table[1]/tbody
@@ -226,25 +233,35 @@ def crawl_history(firstname, lastname, docket):
     logger.info('Finished %s, (%s %s)', docket, firstname, lastname)
     return df
 
-dockets['county'] = 'dubuque'
-dockets = dockets.sample(frac=1)
-for index, row in dockets.iterrows():
-    lastname = row['name'].split(',')[0].strip().lower()
-    firstname = row['name'].split(',')[1].strip().split(' ')[0].lower()
-    docket = row['docket']
-    logger.info('Starting %s, (%s %s)', docket, firstname, lastname)
-    print(firstname, lastname, docket)
-    already_crawled = docket_already_crawled(row)
-    if already_crawled:
-        logger.info('Found row _%s_, skipping', row)
-        continue
-    try:
-        df = crawl_history(firstname, lastname, docket)
-    except KeyError:
-        continue
-    try:
-        df['lastname'] = lastname
-        df['firstname'] = firstname
-        save_to_s3(df, row)
-    except TypeError:
-        continue
+counties = ['scott','woodbury', 'dubuque']
+# counties = ['scott']
+np.random.shuffle(counties)
+for countyname in counties:
+    dockets = pd.read_csv('/opt/%s_dockets.csv' % countyname,encoding = "utf-8")
+    dockets = dockets.drop_duplicates(['docket','name'])
+    # dockets = dockets[dockets['docket'] == 'AGCR409847']
+    dockets['county'] = countyname
+    dockets = dockets.sample(frac=1)
+    for index, row in dockets.iterrows():
+        if ',' in row['name']:
+            lastname = row['name'].split(',')[0].strip().lower()
+            firstname = row['name'].split(',')[1].strip().split(' ')[0].split('-')[0].lower()
+        else:
+            lastname = row['name'].split(' ')[-1].strip().split('-')[0].lower()
+            firstname = row['name'].split(' ')[0].strip().split('-')[0].lower()
+        docket = row.fillna('')['docket']
+        if len(docket) < 5:
+            continue
+        logger.info('Starting %s, (%s %s)', docket, firstname, lastname)
+        print(firstname, lastname, docket)
+        already_crawled = docket_already_crawled(row)
+        if already_crawled:
+            logger.info('Found row _%s_, skipping', row)
+            continue
+        df = crawl_history(firstname, lastname, docket, countyname=countyname)
+        try:
+            df['lastname'] = lastname
+            df['firstname'] = firstname
+            save_to_s3(df, row)
+        except TypeError:
+            continue
