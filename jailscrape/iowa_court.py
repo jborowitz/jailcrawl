@@ -40,6 +40,20 @@ logger = get_logger()
 configs = {line.split('=')[0]:line.split('=')[1].strip() for line in open('/opt/jailscrape/conf.env').readlines()}
 BUCKET = configs['BUCKET']
 
+COUNTY_CODES = {
+        'scott': '07821',
+        'dubuque': '01311',
+        'woodbury': '03971'
+        }
+DOCKET_MATCHES = {
+        'MSM':'SMSM',
+        'ECR': 'FECR',
+        'RCR': 'SRCR',
+        'MCR': 'SMCR',
+        'GCR': 'AGCR',
+        'TA': 'NTA',
+        'WCR': 'OWCR'
+        }
 def solve_iowa_captcha(site_key_stripped):
     dbc_page_params = {
             'googlekey': site_key_stripped,
@@ -71,8 +85,9 @@ def solve_iowa_captcha(site_key_stripped):
 def get_s3_filename(docket_row, days_ago=0):
     docket = docket_row['docket']
     state = docket_row['county']
-    date_collected = (datetime.datetime.now() - relativedelta(days=days_ago)).strftime("%Y-%m-%d")
-    filename = 'court_records/' + state + '/' + docket + '/' + str(datetime.datetime.now().year) + '/' + datetime.datetime.now().strftime("%B")+'/'+ date_collected + '.csv'
+    date_collected = datetime.datetime.now() - relativedelta(days=days_ago)
+    date_collected_str = date_collected.strftime("%Y-%m-%d")
+    filename = 'court_records/' + state + '/' + docket + '/' + str(date_collected.year) + '/' + date_collected.strftime("%B")+'/'+ date_collected_str + '.csv'
     return filename
 def save_to_s3(df, docket_row):
     filename = get_s3_filename(docket_row)
@@ -130,9 +145,34 @@ def crawl_history(firstname, lastname, docket, countyname):
     store_source = browser.page_source
     soup2 = BeautifulSoup(store_source, 'lxml') 
 
-    browser.find_element_by_id('lastName').send_keys(lastname)
-    browser.find_element_by_id('firstName').send_keys(firstname)
 
+    if False:
+        browser.find_element_by_id('lastName').send_keys(lastname)
+        browser.find_element_by_id('firstName').send_keys(firstname)
+    else:
+        browser.find_element_by_id('ui-id-2').click()  
+        soup3 = BeautifulSoup(browser.page_source, 'lxml') 
+        countycode = COUNTY_CODES[countyname]
+        if countyname == 'woodbury':
+            m=re.compile(r'([^\d]*)\d*')            
+            code = m.match(docket).group(1)
+            rest = docket.replace(code,'')
+            try:
+                code = DOCKET_MATCHES[code]
+            except KeyError:
+                pass
+            fixed_docket = code + rest
+            
+        else: 
+            fixed_docket = docket
+        browser.find_element_by_name('caseid1').send_keys(countycode)
+        browser.find_element_by_name('caseid2').send_keys('')
+        browser.find_element_by_name('caseid3').send_keys(fixed_docket[0:2])
+        browser.find_element_by_name('caseid4').send_keys(fixed_docket[2:])
+        print('Field 1: %s' % countycode)
+        print('Field 2: %s' % '')
+        print('Field 3: %s' % fixed_docket[0:2])
+        print('Field 4: %s' % fixed_docket[2:])
 
 
     grecaptcha_class = soup2.find("div", {'class':"g-recaptcha"})
@@ -174,10 +214,12 @@ def crawl_history(firstname, lastname, docket, countyname):
         logger.error('Failed to find docket %s', docket)
         try:
             df = pandas.read_html(store_source4)[0]
-            save_to_s3(df, {'county': countyname, 'docket': docket})
+            import ipdb; ipdb.set_trace()
+            save_to_s3(df, {'county': countyname, 'docket': fixed_docket})
             return 
         except:
             import ipdb; ipdb.set_trace()
+            return
     case_text = matching_link.text
     print('Found case id %s' % case_text)
     matching_link.click()
@@ -234,7 +276,7 @@ def crawl_history(firstname, lastname, docket, countyname):
     return df
 
 counties = ['scott','woodbury', 'dubuque']
-# counties = ['scott']
+# counties = ['woodbury']
 np.random.shuffle(counties)
 for countyname in counties:
     dockets = pd.read_csv('/opt/%s_dockets.csv' % countyname,encoding = "utf-8")
