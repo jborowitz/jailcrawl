@@ -113,7 +113,7 @@ def docket_already_crawled(docket_row, days_ago=30):
     logger.info('File not found for %s, continuing crawl: _%s_', docket_row['docket'],filename)
     return False
 browser = get_browser() # Get a standard browser
-def crawl_history(firstname, lastname, docket, countyname):
+def crawl_history(firstname, lastname, docket, countyname, query_approach):
         # Here are standard variable values/how to initialize them.
         # These aren't initialized here since in the save_single_page
         # case, they can be done in the called function
@@ -146,10 +146,12 @@ def crawl_history(firstname, lastname, docket, countyname):
     soup2 = BeautifulSoup(store_source, 'lxml') 
 
 
-    if False:
+    if query_approach=='name':
         browser.find_element_by_id('lastName').send_keys(lastname)
         browser.find_element_by_id('firstName').send_keys(firstname)
-    else:
+        print('firstname: %s' % firstname)
+        print('lastname: %s' % lastname)
+    elif query_approach=='id':
         browser.find_element_by_id('ui-id-2').click()  
         soup3 = BeautifulSoup(browser.page_source, 'lxml') 
         countycode = COUNTY_CODES[countyname]
@@ -214,11 +216,11 @@ def crawl_history(firstname, lastname, docket, countyname):
         logger.error('Failed to find docket %s', docket)
         try:
             df = pandas.read_html(store_source4)[0]
-            import ipdb; ipdb.set_trace()
+            if query_approach == 'name':
+                raise NameError('problem querying by name')
             save_to_s3(df, {'county': countyname, 'docket': fixed_docket})
             return 
         except:
-            import ipdb; ipdb.set_trace()
             return
     case_text = matching_link.text
     print('Found case id %s' % case_text)
@@ -296,11 +298,21 @@ for countyname in counties:
             continue
         logger.info('Starting %s, (%s %s)', docket, firstname, lastname)
         print(firstname, lastname, docket)
-        already_crawled = docket_already_crawled(row)
+        already_crawled = docket_already_crawled(row, days_ago=4)
         if already_crawled:
             logger.info('Found row _%s_, skipping', row)
             continue
-        df = crawl_history(firstname, lastname, docket, countyname=countyname)
+        try:
+            df = crawl_history(firstname, lastname, docket, countyname=countyname, query_approach='name')
+            logger.info('Completed name query for %s, (%s %s)', docket, firstname, lastname)
+        except NameError:
+            try:
+                df = crawl_history(firstname, lastname, docket, countyname=countyname, query_approach='id')
+                logger.info('Completed id query for %s, (%s %s)', docket, firstname, lastname)
+            except:
+                logger.error('Falied query for %s, (%s %s)', docket, firstname, lastname)
+                pass
+
         try:
             df['lastname'] = lastname
             df['firstname'] = firstname
